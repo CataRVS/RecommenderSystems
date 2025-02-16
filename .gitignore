@@ -9,6 +9,9 @@ __pycache__/
 # Data folder
 data/
 
+# Txt files with comments
+comentarios.txt
+
 # Distribution / packaging
 .Python
 build/

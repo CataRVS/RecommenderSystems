@@ -17,7 +17,15 @@ class Data:
         train (pd.DataFrame): Training data.
         test (pd.DataFrame): Testing data.
     """
-    def __init__(self, data_path: str, sep: str = '\t', test_size: float = 0.2) -> None:
+
+    def __init__(
+            self,
+            data_path: str,
+            sep: str = "\t",
+            test_size: float = 0.2,
+            ignore_first_line: bool = False,
+            col_names: list = ["user", "item", "rating", "timestamp"]
+        ) -> None:
         """
         Constructor for Data class.
 
@@ -38,7 +46,21 @@ class Data:
         self.iidx_map: dict = {}
 
         # Load and preprocess data
-        data: pd.DataFrame = pd.read_csv(data_path, sep=sep, header=None)
+        try:
+            data: pd.DataFrame = pd.read_csv(
+                data_path,
+                sep=sep,
+                header=None,
+                names=col_names,
+                skiprows=1 if ignore_first_line else 0
+            )
+
+        except FileNotFoundError:
+            raise FileNotFoundError("File not found. Please change the path and try again.")
+
+        except pd.errors.ParserError:
+            raise pd.errors.ParserError("Error parsing the file. Please check the file format and try again.")
+
         self._preprocess(data, test_size)
 
     def _preprocess(self, data: pd.DataFrame, test_size: float) -> None:
@@ -50,10 +72,10 @@ class Data:
             test_size (float): Proportion of data to split into test set.
         """
         # Correctly name the columns
-        data.columns = ['user', 'item', 'rating', 'timestamp']
+        data.columns = ["user", "item", "rating", "timestamp"]
 
         # Divide the data into training and testing sets
-        data = data[['user', 'item', 'rating', 'timestamp']]
+        data = data[["user", "item", "rating", "timestamp"]]
 
         # Create a mask for the test set
         test_mask = np.random.rand(len(data)) < test_size
@@ -120,7 +142,7 @@ class Data:
             int: Total number of items.
         """
         return self.total_items
-    
+
     def get_user_ratings(self, user_id: int, original_id: bool = False) -> pd.DataFrame:
         """
         Get the items rated by the user.
