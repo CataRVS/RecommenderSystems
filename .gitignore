@@ -9,6 +9,9 @@ __pycache__/
 # Data folder
 data/
 
+# Visual Studio Code
+.vscode/
+
 # Txt files with comments
 comentarios.txt
 
