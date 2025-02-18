@@ -1,9 +1,143 @@
-import pandas as pd
-import numpy as np
+from abc import ABC, abstractmethod
 from typing import Tuple
+import numpy as np
+import pandas as pd
+
+# TODO: Create a sparse matrix from the data with users as rows and items as columns
+# Funcion para transformar en numpy --> sparse filas usuarios columnas items
+
+class AbstractData(ABC):
+    """
+    Abstract class for loading and preprocessing data.
+
+    Attributes:
+        total_users (int): Total number of users in the dataset.
+        total_items (int): Total number of items in the dataset.
+        uid_map (dict): Mapping of user ids to internal user ids.
+        iid_map (dict): Mapping of item ids to internal item ids.
+        uidx_map (dict): Mapping of internal user ids to user ids.
+        iidx_map (dict): Mapping of internal item ids to item ids.
+        train: Training data.
+        test: Testing data.
+    """
+
+    @abstractmethod
+    def get_data(self) -> tuple:
+        """
+        Returns the training and testing data.
+
+        Returns:
+            tuple: Tuple containing training and testing data.
+        """
+        pass
+
+    @abstractmethod
+    def get_mappings(self) -> Tuple[dict, dict]:
+        """
+        Get the mappings (from original ids to internal ids).
+
+        Returns:
+            tuple: Tuple containing user id mapping and item id mapping.
+        """
+        pass
+
+    @abstractmethod
+    def get_reverse_mappings(self) -> Tuple[dict, dict]:
+        """
+        Get the reverse mappings (from internal ids to original ids).
+
+        Returns:
+            tuple: Tuple containing user id mapping and item id mapping.
+        """
+        pass
+
+    @abstractmethod
+    def get_total_users(self) -> int:
+        """
+        Get the total number of users.
+
+        Returns:
+            int: Total number of users.
+        """
+        pass
+
+    @abstractmethod
+    def get_total_items(self) -> int:
+        """
+        Get the total number of items.
+
+        Returns:
+            int: Total number of items.
+        """
+        pass
+
+    @abstractmethod
+    def get_user_ratings(self, user_id: int, original_id: bool = True):
+        """
+        Get the items rated by the user.
+
+        Args:
+            user_id (int): User id.
+            original_id (bool): Whether the user id is the original or the internal id.
+
+        Raises:
+            KeyError: If the user id is not found.
+
+        Returns:
+            Items rated by the user.
+        """
+        pass
+
+    @abstractmethod
+    def get_users(self) -> list:
+        """
+        Get the list of users.
+
+        Returns:
+            list: List of users.
+        """
+        pass
+
+    @abstractmethod
+    def get_items(self) -> list:
+        """
+        Get the list of items.
+
+        Returns:
+            list: List of items.
+        """
+        pass
+
+    @abstractmethod
+    def get_interaction_from_user(self, user_id: int, original_id: bool = True) -> list:
+        """
+        Get the list of items interacted by the user.
+
+        Args:
+            user_id (int): User id.
+            original_id (bool): Whether the user id is the original or the internal id.
+
+        Returns:
+            list: List of items interacted by the user.
+        """
+        pass
+
+    @abstractmethod
+    def get_interaction_from_item(self, item_id: int, original_id: bool = True) -> list:
+        """
+        Get the list of users that interacted with the item.
+
+        Args:
+            item_id (int): Item id.
+            original_id (bool): Whether the item id is the original or the internal id.
+
+        Returns:
+            list: List of users that interacted with the item.
+        """
+        pass
 
 
-class Data:
+class Data(AbstractData):
     """
     Data class for loading and preprocessing data.
 
@@ -167,3 +301,55 @@ class Data:
 
         # Return the items rated by the user
         return self._train[self._train["user"] == user_id]
+
+    def get_users(self) -> list:
+        """
+        Get the list of users.
+
+        Returns:
+            list: List of users.
+        """
+        return list(self._uid_map.keys())
+
+    def get_items(self) -> list:
+        """
+        Get the list of items.
+
+        Returns:
+            list: List of items.
+        """
+        return list(self._iid_map.keys())
+
+    def get_interaction_from_user(self, user_id: int, original_id: bool = True) -> list:
+        """
+        Get the list of items interacted by the user.
+
+        Args:
+            user_id (int): User id.
+            original_id (bool): Whether the user id is the original or the internal id.
+
+        Returns:
+            list: List of items interacted by the user.
+        """
+        # Get the internal user id if the original id is provided
+        if original_id:
+            user_id = self._uid_map[user_id]
+
+        return list(self._train[self._train["user"] == user_id]["item"].values)
+
+    def get_interaction_from_item(self, item_id: int, original_id: bool = True) -> list:
+        """
+        Get the list of users that interacted with the item.
+
+        Args:
+            item_id (int): Item id.
+            original_id (bool): Whether the item id is the original or the internal id.
+
+        Returns:
+            list: List of users that interacted with the item.
+        """
+        # Get the internal item id if the original id is provided
+        if original_id:
+            item_id = self._iid_map[item_id]
+
+        return list(self._train[self._train["item"] == item_id]["user"].values)

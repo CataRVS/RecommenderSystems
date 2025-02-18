@@ -1,53 +1,6 @@
-from abc import ABC, abstractmethod
-from src.data import Data
+import numpy as np
+import random
 from typing import List, Tuple
-
-
-class Strategy(ABC):
-    """
-    Abstract class to define recommendation filtering strategies.
-    """
-
-    @abstractmethod
-    def filter(self, user_id: int, data: Data) -> list:
-        """
-        Filter the candidate items to recommend.
-
-        Parameters:
-            user_id (int): User ID.
-            data (Data): Data instance with the user-item interactions.
-
-        Returns:
-            list: List of filtered items.
-        """
-        pass
-
-
-class ExcludeSeenStrategy(Strategy):
-    """
-    Strategy that excludes items already seen by the user.
-    """
-
-    def filter(self, user_id: int, data: Data) -> list:
-        """
-        Filter the items that the user has already seen.
-
-        Parameters:
-            user_id (int): Original user ID.
-            candidates (list): Items to be filtered.
-            user_history (dict): User interaction history.
-
-        Returns:
-            list: List of filtered items.
-        """
-        # We get the items already seen by the user
-        user_history = data.get_user_ratings(user_id, original_id=True)
-
-        # TODO: Why does it return a generator?
-        # We filter the candidates
-        # FIXME: We are not abstracting the data structure here
-        candidates = [item for item in range(data.get_total_items()) if item not in user_history["item"].values]
-        return candidates
 
 
 class Recommendation:
@@ -78,9 +31,9 @@ class Recommendation:
         Returns:
             str: String representation of the recommendation.
         """
-        text = f"User {self.user_id} - Recommendations:\n"
-        for item, score in self.recommended_items:
-            text += f"+ {item} - {score}\n"
+        text = ""
+        for item_id, score in self.recommended_items:
+            text += f"{self.user_id},{item_id},{score}\n"
 
         return text
 
@@ -102,3 +55,33 @@ class Recommendation:
                 and the recommendation score (float).
         """
         return self.recommended_items
+
+
+    def save(self, path: str, mode: str = "w"):
+        """
+        Save the recommendation to a file.
+
+        Parameters:
+            path (str): Path to save the recommendation.
+            mode (str): File opening mode, "w" to write and "a" to append.
+
+        Raises:
+            ValueError: If the mode is invalid.
+        """
+        if mode not in ["w", "a"]:
+            raise ValueError("Invalid mode. Use 'w' to write and 'a' to append.")
+
+        with open(path, mode) as f:
+            f.write(str(self))
+
+
+def set_seed(seed: int):
+    """
+    Set the seed for reproducibility.
+
+    Parameters:
+        seed (int): Seed value.
+    """
+    # HACK: Test if this is the correct way to set the seed
+    random.seed(seed)
+    np.random.seed(seed)

@@ -1,13 +1,18 @@
 import argparse
-from src.data import Data
-import src.recommenders as rec
 import src.utils as ut
-from src.utils import Recommendation, Strategy
+import src.recommenders as rec
+import src.strategies as st
+from src.data import Data
+from src.utils import Recommendation
+from src.strategies import Strategy
 
 
 def load_recommender(recommender_name: str, data: Data) -> rec.Recommender:
     """
-    Load the specified recommender system.
+    Load the specified recommender system. Available recommenders are:
+    - popularity: Recommends the most popular items.
+    - random: Recommends random items.
+    - XXX: Add more recommenders if needed.
 
     Args:
         recommender_name (str): Name of the recommender to load.
@@ -24,14 +29,19 @@ def load_recommender(recommender_name: str, data: Data) -> rec.Recommender:
     elif recommender_name == "random":
         recommender = rec.RandomRecommender(data)
     else:
-        raise ValueError(f"Recommender {recommender_name} not found.")
+        print(f"Recommender {recommender_name} not found. Check the available "
+              + "recommenders.")
+        exit(1)
 
     return recommender
 
 
 def load_strategy(strategy_name: str) -> Strategy:
     """
-    Load the specified recommendation strategy.
+    Load the specified recommendation strategy. Available strategies are:
+    - exclude_seen: Exclude items already seen by the user.
+    - no_filtering: Do not apply any filtering strategy.
+    - XXX: Add more strategies if needed.
 
     Args:
         strategy_name (str): Name of the recommendation strategy to load.
@@ -44,9 +54,12 @@ def load_strategy(strategy_name: str) -> Strategy:
     """
     # Load the strategy based on the specified name
     if strategy_name == "exclude_seen":
-        strategy = ut.ExcludeSeenStrategy()
+        strategy = st.ExcludeSeenStrategy()
+    elif strategy_name == "no_filtering":
+        strategy = st.NoFilteringStrategy()
     else:
-        raise ValueError(f"Strategy {strategy_name} not found.")
+        print(f"Strategy {strategy_name} not found. Check the available strategies.")
+        exit(1)
 
     return strategy
 
@@ -93,14 +106,6 @@ def main():
     parser.add_argument(
         "--recommender", type=str, help="name of the recommender to use", required=True
     )
-    # Add the user argument
-    parser.add_argument(
-        "--user",
-        type=int,
-        help="user id to generate recommendations for",
-        required=False,
-        default=1,
-    )
     # Add the number of recommendations argument
     parser.add_argument(
         "--n_items_to_recommend",
@@ -137,6 +142,7 @@ def main():
         default="\t",
     )
 
+    # TODO: Recibir de entrenamiento y de test (quizas hacer otro main)
     # Add the test size argument
     parser.add_argument(
         "--test_size",
@@ -181,7 +187,9 @@ def main():
         data,
     )
 
-    # FIXME: See what to do with the recommendations
+    # TODO: Return the recommendations in a file user, item, score per row
+    recommendations.save("data/recommendations.csv")
+    # Devolverlo en un fichero a parte usuario, item, score
     # Print the recommendations
     print(recommendations)
 
