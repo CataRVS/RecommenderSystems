@@ -1,21 +1,26 @@
 import argparse
+import src.knn as knn
 import src.utils as ut
 import src.recommenders as rec
 import src.strategies as st
 from src.data import Data
-from src.utils import Recommendation
+from src.utils import Recommendation, set_seed
 from src.strategies import Strategy
 
 
-def load_recommender(recommender_name: str, data: Data) -> rec.Recommender:
+def load_recommender(recommender_name: str, data: Data, k: int=5) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
     - popularity: Recommends the most popular items.
     - random: Recommends random items.
-    - XXX: Add more recommenders if needed.
+    - knn_user: User-based collaborative filtering recommender.
+    - knn_item: Item-based collaborative filtering recommender.
+    - UPDATE 1: Add more recommenders if needed.
 
     Args:
         recommender_name (str): Name of the recommender to load.
+        data (Data): Data instance with the user-item interactions.
+        k (int): Number of neighbors to consider for KNN recommenders.
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -28,6 +33,10 @@ def load_recommender(recommender_name: str, data: Data) -> rec.Recommender:
         recommender = rec.PopularityRecommender(data)
     elif recommender_name == "random":
         recommender = rec.RandomRecommender(data)
+    elif recommender_name == "knn_user":
+        recommender = knn.UserBasedRatingPredictionRecommender(data, k=k)
+    elif recommender_name == "knn_item":
+        recommender = knn.ItemBasedRecommendationRecommender(data, k=k)
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
               + "recommenders.")
@@ -35,16 +44,16 @@ def load_recommender(recommender_name: str, data: Data) -> rec.Recommender:
 
     return recommender
 
-
-def load_strategy(strategy_name: str) -> Strategy:
+def load_strategy(strategy_name: str, data: Data) -> Strategy:
     """
     Load the specified recommendation strategy. Available strategies are:
     - exclude_seen: Exclude items already seen by the user.
     - no_filtering: Do not apply any filtering strategy.
-    - XXX: Add more strategies if needed.
+    - UPDATE 2: Add more strategies if needed.
 
     Args:
         strategy_name (str): Name of the recommendation strategy to load.
+        data (Data): Data instance with the user-item interactions.
 
     Returns:
         Strategy: Instance of the specified recommendation strategy.
@@ -54,9 +63,9 @@ def load_strategy(strategy_name: str) -> Strategy:
     """
     # Load the strategy based on the specified name
     if strategy_name == "exclude_seen":
-        strategy = st.ExcludeSeenStrategy()
+        strategy = st.ExcludeSeenStrategy(data)
     elif strategy_name == "no_filtering":
-        strategy = st.NoFilteringStrategy()
+        strategy = st.NoFilteringStrategy(data)
     else:
         print(f"Strategy {strategy_name} not found. Check the available strategies.")
         exit(1)
@@ -66,32 +75,44 @@ def load_strategy(strategy_name: str) -> Strategy:
 
 def generate_recommendations(
     recommender_name: str,
-    user: int,
     n_items_to_recommend: int,
     strategy_name: str,
     data: Data,
+    k: int = 5,
 ) -> Recommendation:
     """
     Generate recommendations using the specified recommender system.
 
     Args:
         recommender_name (str): Name of the recommender to use.
-        user (int): User ID to generate recommendations for.
         n_items_to_recommend (int): Number of recommendations to generate.
         strategy_name (str): Recommendation strategy to use.
         data (Data): Data instance with the user-item interactions.
+        k (int): Number of neighbors to consider for KNN recommenders.
 
     Returns:
         Recommendation: Instance with the top-k recommendations for the user.
     """
     # Load the recommender
-    recommender = load_recommender(recommender_name, data)
+    recommender = load_recommender(recommender_name, data, k=k)
 
     # Load the strategy
-    strategy = load_strategy(strategy_name)
+    strategy = load_strategy(strategy_name, data)
+
+    # Get the test users
+    test_users = data.get_users(True)
+    print(data.get_data()[1])
 
     # Generate recommendations
-    recommendations = recommender.recommend(user, strategy, n_items_to_recommend)
+    for user in test_users:
+        recommendations = recommender.recommend(user, strategy, n_items_to_recommend)
+        # DUDA 4: Ver si lo guardo en un solo fichero o en varios
+        # Save the recommendations
+        # recommendations.save(f"data/recommendations_{user}.csv")
+        # Print the recommendations
+        print(f"Recommendations for user {user}:")
+        print(recommendations)
+        # TODO: Si si, saber que hay que juntar todos antes del return
     return recommendations
 
 
@@ -123,7 +144,7 @@ def main():
         default="exclude_seen",
     )
 
-    # FIXME: It has to be required
+    # FIXME 1: It has to be required
     # Add the data path argument
     parser.add_argument(
         "--data_path",
@@ -142,7 +163,9 @@ def main():
         default="\t",
     )
 
-    # TODO: Recibir de entrenamiento y de test (quizas hacer otro main)
+    # DUDA 2: Preguntar que era esto.
+    # Recibir de entrenamiento y de test (quizas hacer otro main)
+    # Es que si recibe dos archivos separados o uno y lo divide con el test_size?
     # Add the test size argument
     parser.add_argument(
         "--test_size",
@@ -158,7 +181,7 @@ def main():
         type=bool,
         help="whether to ignore the first line of the data file",
         required=False,
-        default=False,
+        default=True,
     )
 
     # Add the column names argument
@@ -170,8 +193,29 @@ def main():
         default=["user", "item", "rating", "timestamp"],
     )
 
+    # Add the k argument for KNN recommenders
+    parser.add_argument(
+        "--k",
+        type=int,
+        help="number of neighbors to consider for KNN recommenders",
+        required=False,
+        default=5,
+    )
+
+    # Add the seed argument
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="random seed for reproducibility",
+        required=False,
+        default=42,
+    )
+
     # Parse the arguments
     args = parser.parse_args()
+
+    # Set the random seed for reproducibility
+    set_seed(args.seed)
 
     # Load the data
     data = Data(
@@ -181,17 +225,16 @@ def main():
     # Generate recommendations
     recommendations = generate_recommendations(
         args.recommender,
-        args.user,
         args.n_items_to_recommend,
         args.strategy,
         data,
+        args.k
     )
 
-    # TODO: Return the recommendations in a file user, item, score per row
-    recommendations.save("data/recommendations.csv")
+    # TEST 5: Return the recommendations in a file user, item, score per row
     # Devolverlo en un fichero a parte usuario, item, score
     # Print the recommendations
-    print(recommendations)
+
 
 
 if __name__ == "__main__":

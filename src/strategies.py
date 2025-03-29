@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.data import Data
+from typing import List
 
 
 class Strategy(ABC):
@@ -17,13 +18,12 @@ class Strategy(ABC):
         self.data = data
 
     @abstractmethod
-    def filter(self, user_id: int, data: Data) -> list:
+    def filter(self, user_id: int) -> List[int]:
         """
         Filter the candidate items to recommend.
 
         Parameters:
             user_id (int): User ID.
-            data (Data): Data instance with the user-item interactions.
 
         Returns:
             list: List of filtered items.
@@ -46,7 +46,7 @@ class ExcludeSeenStrategy(Strategy):
         # Call the parent constructor
         super().__init__(data)
 
-    def filter(self, user_id: int) -> list:
+    def filter(self, user_id: int) -> List[int]:
         """
         Filter the items that the user has already seen.
 
@@ -59,11 +59,12 @@ class ExcludeSeenStrategy(Strategy):
             list: List of filtered items.
         """
         # We get the items already seen by the user
-        user_history = self.data.get_user_ratings(user_id, original_id=True)
+        user_history = set(self.data.get_interaction_from_user(user_id))
 
         # We filter the candidates
-        # FIXME: We are not abstracting the data structure here
-        candidates = [item for item in range(self.data.get_total_items()) if item not in user_history["item"].values]
+        candidates = [
+            item for item in self.data.get_items() if item not in user_history
+        ]
         return candidates
 
 
@@ -82,7 +83,7 @@ class NoFilteringStrategy(Strategy):
         # Call the parent constructor
         super().__init__(data)
 
-    def filter(self, user_id: int) -> list:
+    def filter(self, user_id: int) -> List[int]:
         """
         Return all the items as candidates.
 
@@ -95,4 +96,4 @@ class NoFilteringStrategy(Strategy):
             list: List of filtered items.
         """
         # Return all the items
-        return list(range(self.data.get_total_items()))
+        return self.data.get_items()

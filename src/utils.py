@@ -3,6 +3,18 @@ import random
 from typing import List, Tuple
 
 
+def set_seed(seed: int):
+    """
+    Set the seed for reproducibility.
+
+    Parameters:
+        seed (int): Seed value.
+    """
+    # TEST 1: Test if this is the correct way to set the seed
+    random.seed(seed)
+    np.random.seed(seed)
+
+
 class Recommendation:
     """
     Represents a recommendation for a user.
@@ -31,11 +43,11 @@ class Recommendation:
         Returns:
             str: String representation of the recommendation.
         """
-        text = ""
-        for item_id, score in self.recommended_items:
-            text += f"{self.user_id},{item_id},{score}\n"
+        return "\n".join(
+            f"{self.user_id},{item_id},{score}"
+            for item_id, score in self.recommended_items
+        ) + "\n"
 
-        return text
 
     def get_user_id(self) -> int:
         """
@@ -46,7 +58,7 @@ class Recommendation:
         """
         return self.user_id
 
-    def get_recommendation(self) -> List[Tuple[str, float]]:
+    def get_recommendation(self) -> List[Tuple[int, float]]:
         """
         Get the list of recommended items.
 
@@ -73,15 +85,3 @@ class Recommendation:
 
         with open(path, mode) as f:
             f.write(str(self))
-
-
-def set_seed(seed: int):
-    """
-    Set the seed for reproducibility.
-
-    Parameters:
-        seed (int): Seed value.
-    """
-    # HACK: Test if this is the correct way to set the seed
-    random.seed(seed)
-    np.random.seed(seed)

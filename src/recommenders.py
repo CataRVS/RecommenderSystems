@@ -31,7 +31,7 @@ class Recommender(ABC):
         Recommend items to the user.
 
         Parameters:
-            user_id (str): Original user ID.
+            user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
             n (int): Number of items to recommend.
 
@@ -60,7 +60,7 @@ class PopularityRecommender(Recommender):
         # Call the parent constructor
         super().__init__(data)
         # Compute the popularity scores of the items with the training data
-        self.popularity_scores = self._compute_popularity(data)
+        self.popularity_scores = self._compute_popularity()
 
     def _compute_popularity(self) -> dict:
         """
@@ -73,9 +73,12 @@ class PopularityRecommender(Recommender):
         popularity_scores = {}
         # Get the candidates to recommend
         candidates = self.data.get_items()
+
+        # Compute the popularity scores for each candidate based on the number of
+        # interactions
         for candidate in candidates:
             # Get the number of interactions for the item
-            # HACK: Test if this is the correct method to get the number of interactions
+            # TEST 3: Test if this is the correct method to get the number of interactions
             popularity_scores[candidate] = len(
                 self.data.get_interaction_from_item(candidate)
             )
@@ -89,7 +92,7 @@ class PopularityRecommender(Recommender):
         Recommend the most popular items to the user.
 
         Parameters:
-            user_id (str): Original user ID.
+            user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
             n (int): Number of items to recommend.
 
@@ -98,19 +101,23 @@ class PopularityRecommender(Recommender):
                 the user.
         """
         # Filter the candidates based on the strategy
-        filtered_candidates = strategy.filter(user_id, self.data)
+        filtered_candidates = strategy.filter(user_id)
+
         # Sort the filtered candidates by popularity score
         sorted_candidates = sorted(
             filtered_candidates,
             key=lambda item: self.popularity_scores[item],
             reverse=True,
         )
+
         # Take the top-n items
         top_candidates = sorted_candidates[:n]
+
         # Create the recommendations item list
         recommendations = [
             (item, self.popularity_scores[item]) for item in top_candidates
         ]
+
         # Return the recommendations in a Recommendation instance
         return Recommendation(user_id, recommendations)
 
@@ -127,7 +134,7 @@ class RandomRecommender(Recommender):
         Recommend random items to the user.
 
         Parameters:
-            user_id (str): Original user ID.
+            user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
             n (int): Number of items to recommend.
 
@@ -136,14 +143,17 @@ class RandomRecommender(Recommender):
                 the user.
         """
         # Filter the candidates based on the strategy
-        filtered_candidates = strategy.filter(user_id, self.data)
+        filtered_candidates = strategy.filter(user_id)
+
         # Take n random items from the filtered candidates
         recommended_items = random.sample(
             filtered_candidates, min(n, len(filtered_candidates))
         )
+
         # Create the recommendations item list
         recommendation_items = [
             (item, n - i) for i, item in enumerate(recommended_items)
         ]
+
         # Return the recommendations in a Recommendation instance
         return Recommendation(user_id, recommendation_items)
