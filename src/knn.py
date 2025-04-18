@@ -1,10 +1,10 @@
 from src.recommenders import Recommender
 from src.utils import Recommendation
-from src.similarities import PearsonCorrelationSimilarity
+from src.similarities import Similarity, PearsonCorrelationUsers, PearsonCorrelationItems
 from src.data import Data
 from src.strategies import Strategy
 from typing import List, Tuple
-
+import numpy as np
 
 class UserBasedRatingPredictionRecommender(Recommender):
     """
@@ -19,31 +19,42 @@ class UserBasedRatingPredictionRecommender(Recommender):
         k (int): Number of similar users to consider for prediction.
         similarity (Similarity): Similarity measure to use for finding similar users.
     """
-    def __init__(self, data: Data, k: int = 10, similarity_measure=None) -> None:
+    def __init__(
+        self, data: Data, k: int = 10, similarity_measure: Similarity | None = None
+    ) -> None:
         """
         Create a new UserBasedRatingPredictionRecommender instance.
 
         Parameters:
             data (Data): Data instance with the user-item interactions.
             k (int): Number of similar users to consider for prediction.
-            similarity_measure (Similarity): Similarity measure to use for finding
+            similarity_measure (Similarity|None): Similarity measure to use for finding
                 similar users. If None, the default PearsonCorrelationSimilarity is used.
         """
         super().__init__(data)
         self.k = k
         # If there is no similarity measure, use the default one
         if similarity_measure is None:
-            self.similarity = PearsonCorrelationSimilarity(data)
+            # user–user similarity
+            self.similarity = PearsonCorrelationUsers(data)
         else:
             self.similarity = similarity_measure
 
-    def recommend(self, user_id: int, strategy: Strategy, n: int = 10) -> Recommendation:
+    def recommend(
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation = Recommendation(),
+        n: int = 10
+    ) -> Recommendation:
         """
         Recommend items to the user using user-based collaborative filtering.
 
         Parameters:
             user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
+            recommendation (Recommendation): Recommendation instance to add the
+                recommendations to.
             n (int): Number of items to recommend.
 
         Returns:
@@ -54,63 +65,51 @@ class UserBasedRatingPredictionRecommender(Recommender):
         candidates: List[int] = strategy.filter(user_id)
 
         # We initialize the list of recommendations
-        recommendations: List[Tuple[int, float]] = []
+        predictions: List[Tuple[int, float]] = []
 
-        # We get the active user's history and their average rating (to use as a fallback)
+        # We get the active user's history and their average rating
         user_ratings = self.data.get_interaction_from_user(user_id)
         # If the user has rated items, calculate the average rating
-        if user_ratings:
-            user_avg = sum(user_ratings.values()) / len(user_ratings)
-        # If the user has not rated any items, set the average rating to 0
-        else:
-            user_avg = 0.0
+        user_avg = (sum(user_ratings.values()) / len(user_ratings)) if user_ratings else 0.0
+
+        # Convert external user ID to internal index
+        u_idx = self.data.to_internal_user(user_id)
 
         # For each candidate item, we calculate the predicted rating
         for item in candidates:
-            # Obtain all the users that have rated this item
-            item_ratings = self.data.get_interaction_from_item(item)
-            neighbors = []
-            for v, r_v in item_ratings.items():
-                # If the user is the same as the active user, skip it
-                if v == user_id:
-                    continue
-                # Calculate the similarity between the active user and the neighbor
-                sim = self.similarity.compute_user_similarity(user_id, v)
-                # We only consider neighbors with a non-zero similarity
-                if sim != 0:
-                    neighbors.append((v, sim, r_v))
-            # Order the neighbors by similarity in descending order
-            neighbors.sort(key=lambda x: abs(x[1]), reverse=True)
-            # Select the top-k neighbors
-            top_neighbors = neighbors[:self.k]
+            # Retrieve internal users and their ratings for this item
+            users_idx, ratings = self.data.get_item_interactions_indices(item)
 
-            # Calculate the predicted rating using the weighted average of the neighbors
+            # Get the precomputed similarities for user u_idx from the similarity class
+            sims = self.similarity.sim_matrix[u_idx, users_idx]
+
+            # Select top-k neighbors by similarity magnitude
+            top_k_indices = np.argsort(-np.abs(sims))[: self.k] # Top-k indices
+            top_sims = sims[top_k_indices] # Top-k similarities
+            top_rats = ratings[top_k_indices] # Top-k ratings
+
+            # Compute the predicted rating using the weighted average prediction
             # r̂_ui = (Σ_v w_uv * r_vi) / (Σ_v |w_uv|)
-            if top_neighbors:
-                numerator = sum(sim * r for (_, sim, r) in top_neighbors)
-                denominator = sum(abs(sim) for (_, sim, _) in top_neighbors)
-                if denominator > 0:
-                    predicted_rating = numerator / denominator
-                else:
-                    predicted_rating = user_avg
-            else:
-                # If there are no neighbors, use the user's average rating
-                predicted_rating = user_avg
+            numerator   = np.dot(top_sims, top_rats)
+            denominator = np.sum(np.abs(top_sims))
+            # If there are no neighbors, use the user's average rating
+            predicted_rating = (numerator / denominator) if denominator > 0 else user_avg
 
             # Add the predicted rating to the recommendations list
-            recommendations.append((item, predicted_rating))
+            predictions.append((item, predicted_rating))
 
         # Sort the recommendations by predicted rating in descending order
-        recommendations.sort(key=lambda x: x[1], reverse=True)
+        predictions.sort(key=lambda x: x[1], reverse=True)
 
-        # Take the top-n items
-        top_recommendations = recommendations[:n]
+        # Take the top-n items from the sorted list (if there are less than n items, take all)
+        if len(predictions) > n:
+            top_n_recommendations = predictions[:n]
+        else:
+            top_n_recommendations = predictions
 
-        # DUDA 5: A veces el item tiene una puntuacion negativa, y no se si eso es correcto
-        # Deberia clippear la puntuacion a 0? Da igual si la puntuacion es negativa?
-
-        # Return the recommendations
-        return Recommendation(user_id, top_recommendations)
+        # Add the recommendations to the Recommendation instance
+        recommendation.add_recommendations(user_id, top_n_recommendations)
+        return recommendation
 
 
 class ItemBasedRecommendationRecommender(Recommender):
@@ -125,31 +124,42 @@ class ItemBasedRecommendationRecommender(Recommender):
         k (int): Number of similar items to consider for prediction.
         similarity (Similarity): Similarity measure to use for finding similar items.
     """
-    def __init__(self, data: Data, k: int = 10, similarity_measure=None) -> None:
+    def __init__(
+        self, data: Data, k: int = 10, similarity_measure: Similarity | None = None
+    ) -> None:
         """
         Create a new ItemBasedRecommendationRecommender instance.
 
         Parameters:
             data (Data): Data instance with the user-item interactions.
             k (int): Number of similar items to consider for prediction.
-            similarity_measure (Similarity): Similarity measure to use for finding
+            similarity_measure (Similarity | None): Similarity measure to use for finding
                 similar items. If None, the default PearsonCorrelationSimilarity is used.
         """
         super().__init__(data)
         self.k = k
         # If there is no similarity measure, use the default one
         if similarity_measure is None:
-            self.similarity = PearsonCorrelationSimilarity(data)
+            # item–item similarity
+            self.similarity = PearsonCorrelationItems(data)
         else:
             self.similarity = similarity_measure
 
-    def recommend(self, user_id: int, strategy: Strategy, n: int = 10) -> Recommendation:
+    def recommend(
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation = Recommendation(),
+        n: int = 10
+    ) -> Recommendation:
         """
         Recommend items to the user using item-based collaborative filtering.
 
         Parameters:
             user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
+            recommendation (Recommendation): Recommendation instance to add the
+                recommendations to.
             n (int): Number of items to recommend.
 
         Returns:
@@ -158,44 +168,47 @@ class ItemBasedRecommendationRecommender(Recommender):
         """
         # Filter the candidates based on the strategy
         candidates: List[int] = strategy.filter(user_id)
-        recommendations: List[Tuple[int, float]] = []
+        predictions: List[Tuple[int, float]] = []
 
         # Obtain the active user's history and their average rating (to use as a fallback)
         user_history = self.data.get_interaction_from_user(user_id)  # {item: rating}
-        if user_history:
-            user_avg = sum(user_history.values()) / len(user_history)
-        else:
-            user_avg = 0.0
+        # If the user has rated items, calculate the average rating
+        user_avg = (sum(user_history.values()) / len(user_history)) if user_history else 0.0
 
         # For each candidate item, we calculate the predicted rating
         for item in candidates:
-            # Obtain all the users that have rated this item
-            neighbors = []
-            # Get the ratings of the item from all users
-            for j, r_j in user_history.items():
-                sim = self.similarity.compute_item_similarity(item, j)
-                if sim != 0:
-                    neighbors.append((j, sim, r_j))
-            # Order the neighbors by similarity in descending order and select the top-k
-            neighbors.sort(key=lambda x: abs(x[1]), reverse=True)
-            top_neighbors = neighbors[:self.k]
+            # Get the items that the user has rated
+            user_items_idx, ratings = self.data.get_user_interactions_indices(user_id)
 
-            # Calculate the predicted rating using the weighted average of the neighbors
-            if top_neighbors:
-                numerator = sum(sim * r for (_, sim, r) in top_neighbors)
-                denominator = sum(abs(sim) for (_, sim, _) in top_neighbors)
-                if denominator > 0:
-                    predicted_rating = numerator / denominator
-                else:
-                    predicted_rating = user_avg
-            else:
-                # If there are no neighbors, use the user's average rating
-                predicted_rating = user_avg
+            # Get the precomputed similarities for item from the similarity class
+            item_idx = self.data.to_internal_item(item)
+            item_sims = self.similarity.sim_matrix[item_idx, user_items_idx]
+
+            # Select top-k neighbors by similarity magnitude
+            top_k_indices = np.argsort(-np.abs(item_sims))[: self.k]  # Top-k indices
+            top_sims = item_sims[top_k_indices]  # Top-k similarities
+            top_rats = ratings[top_k_indices]  # Top-k ratings
+
+            # Compute the predicted rating using the weighted average of the neighbors
+            # r̂_ui = (Σ_v w_uv * r_vi) / (Σ_v |w_uv|)
+            # where w_uv is the similarity between item u and item v, and r_vi is the rating
+            # given by user u to item v
+            numerator = np.dot(top_sims, top_rats)
+            denominator = np.sum(np.abs(top_sims))
+            # If there are no neighbors, use the user's average rating
+            predicted_rating = (numerator / denominator) if denominator > 0 else user_avg
 
             # Add the predicted rating to the recommendations list
-            recommendations.append((item, predicted_rating))
+            predictions.append((item, predicted_rating))
 
         # Sort the recommendations by predicted rating in descending order
-        recommendations.sort(key=lambda x: x[1], reverse=True)
-        top_recommendations = recommendations[:n]
-        return Recommendation(user_id, top_recommendations)
+        predictions.sort(key=lambda x: x[1], reverse=True)
+        # Take the top-n items from the sorted list (if there are less than n items, take all)
+        if len(predictions) > n:
+            top_n_recommendations = predictions[:n]
+        else:
+            top_n_recommendations = predictions
+
+        # Add the recommendations to the Recommendation instance
+        recommendation.add_recommendations(user_id, top_n_recommendations)
+        return recommendation

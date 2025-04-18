@@ -10,7 +10,6 @@ def set_seed(seed: int):
     Parameters:
         seed (int): Seed value.
     """
-    # TEST 1: Test if this is the correct way to set the seed
     random.seed(seed)
     np.random.seed(seed)
 
@@ -20,21 +19,14 @@ class Recommendation:
     Represents a recommendation for a user.
 
     Attributes:
-        user_id (int): Original user ID.
         recommended_items (list): List of recommended items.
     """
 
-    def __init__(self, user_id: int, recommended_items: List[tuple]):
+    def __init__(self):
         """
         Create a new Recommendation instance.
-
-        Parameters:
-            user_id (int): Original user ID.
-            recommended_items (list): List of recommended items. Each item is a tuple
-                with the item ID and the recommendation score.
         """
-        self.user_id = user_id
-        self.recommended_items = recommended_items
+        self.recommended_items = list()
 
     def __str__(self) -> str:
         """
@@ -44,30 +36,31 @@ class Recommendation:
             str: String representation of the recommendation.
         """
         return "\n".join(
-            f"{self.user_id},{item_id},{score}"
-            for item_id, score in self.recommended_items
+            f"{user_id},{item_id},{score}"
+            for user_id, item_id, score in self.recommended_items
         ) + "\n"
 
-
-    def get_user_id(self) -> int:
+    def add_recommendations(self, user_id: int, recommendations: List[Tuple[int, float]]):
         """
-        Get the original user ID.
+        Add recommended items to the recommendation list.
 
-        Returns:
-            int: Original user ID.
+        Parameters:
+            user_id (int): Original user ID.
+            recommendations (list): List of recommended items. Each item is a tuple
+                with the item ID and the recommendation score.
         """
-        return self.user_id
+        for item_id, score in recommendations:
+            self.recommended_items.append((user_id, item_id, score))
 
-    def get_recommendation(self) -> List[Tuple[int, float]]:
+    def get_recommendation(self) -> List[Tuple[int, int, float]]:
         """
         Get the list of recommended items.
 
         Returns:
-            list: List of recommended items. Each item is a tuple with the item ID (str)
-                and the recommendation score (float).
+            list: List of recommended items. Each item is a tuple with the user ID (int),
+                the item ID (str) and the recommendation score (float).
         """
         return self.recommended_items
-
 
     def save(self, path: str, mode: str = "w"):
         """

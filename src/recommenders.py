@@ -25,7 +25,11 @@ class Recommender(ABC):
 
     @abstractmethod
     def recommend(
-        self, user_id: int, strategy: Strategy, n: int = 10
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation = Recommendation(),
+        n: int = 10,
     ) -> Recommendation:
         """
         Recommend items to the user.
@@ -33,6 +37,8 @@ class Recommender(ABC):
         Parameters:
             user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
+            recommendation (Recommendation): Recommendation instance to add the
+                recommendations to.
             n (int): Number of items to recommend.
 
         Returns:
@@ -78,7 +84,6 @@ class PopularityRecommender(Recommender):
         # interactions
         for candidate in candidates:
             # Get the number of interactions for the item
-            # TEST 3: Test if this is the correct method to get the number of interactions
             popularity_scores[candidate] = len(
                 self.data.get_interaction_from_item(candidate)
             )
@@ -86,7 +91,11 @@ class PopularityRecommender(Recommender):
         return popularity_scores
 
     def recommend(
-        self, user_id: int, strategy: Strategy, n: int = 10
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation = Recommendation(),
+        n: int = 10,
     ) -> Recommendation:
         """
         Recommend the most popular items to the user.
@@ -94,6 +103,8 @@ class PopularityRecommender(Recommender):
         Parameters:
             user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
+            recommendation (Recommendation): Recommendation instance to add the
+                recommendations to.
             n (int): Number of items to recommend.
 
         Returns:
@@ -118,8 +129,9 @@ class PopularityRecommender(Recommender):
             (item, self.popularity_scores[item]) for item in top_candidates
         ]
 
-        # Return the recommendations in a Recommendation instance
-        return Recommendation(user_id, recommendations)
+        # Add the recommendations to the Recommendation instance
+        recommendation.add_recommendations(user_id, recommendations)
+        return recommendation
 
 
 class RandomRecommender(Recommender):
@@ -128,7 +140,11 @@ class RandomRecommender(Recommender):
     """
 
     def recommend(
-        self, user_id: int, strategy: Strategy, n: int = 10
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation = Recommendation(),
+        n: int = 10,
     ) -> Recommendation:
         """
         Recommend random items to the user.
@@ -136,6 +152,8 @@ class RandomRecommender(Recommender):
         Parameters:
             user_id (int): Original user ID.
             strategy (Strategy): Recommendation strategy.
+            recommendation (Recommendation): Recommendation instance to add the
+                recommendations to.
             n (int): Number of items to recommend.
 
         Returns:
@@ -155,5 +173,6 @@ class RandomRecommender(Recommender):
             (item, n - i) for i, item in enumerate(recommended_items)
         ]
 
-        # Return the recommendations in a Recommendation instance
-        return Recommendation(user_id, recommendation_items)
+        # Add the recommendations to the Recommendation instance
+        recommendation.add_recommendations(user_id, recommendation_items)
+        return recommendation
