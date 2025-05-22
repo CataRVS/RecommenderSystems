@@ -1,6 +1,6 @@
 import argparse
 import src.knn as knn
-import src.utils as ut
+import src.matrix_factorisation as mf
 import src.recommenders as rec
 import src.similarities as sim
 import src.strategies as st
@@ -14,7 +14,12 @@ def load_recommender(
     recommender_name: str,
     data: Data,
     k: int = 5,
+    threshold: float = 1.0,
     similarity_measure: str | None = None,
+    n_factors: int = 20,
+    lr: float = 0.01,
+    reg: float = 0.1,
+    n_epochs: int = 10
 ) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
@@ -22,13 +27,19 @@ def load_recommender(
     - random: Recommends random items.
     - knn_user: User-based collaborative filtering recommender.
     - knn_item: Item-based collaborative filtering recommender.
+    - mf: Matrix factorization recommender.
     - UPDATE 1: Add more recommenders if needed.
 
     Parameters:
         recommender_name (str): Name of the recommender to load.
         data (Data): Data instance with the user-item interactions.
         k (int): Number of neighbors to consider for KNN recommenders.
+        threshold (float): Threshold for KNN recommenders.
         similarity_measure (Similarity | None): Similarity measure to use for KNN recommenders.
+        n_factors (int): Number of latent factors for matrix factorization.
+        lr (float): Learning rate for matrix factorization.
+        reg (float): Regularization strength for matrix factorization.
+        n_epochs (int): Number of epochs for matrix factorization.
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -44,14 +55,22 @@ def load_recommender(
     elif recommender_name == "knn_user":
         if similarity_measure:
             similarity_measure = load_similarity(similarity_measure, data, "user")
-        recommender = knn.UserBasedRatingPredictionRecommender(
-            data, k=k, similarity_measure=similarity_measure
+        recommender = knn.UserBasedRankingRecommender(
+            data, k=k, similarity_measure=similarity_measure, threshold=threshold
         )
     elif recommender_name == "knn_item":
         if similarity_measure:
             similarity_measure = load_similarity(similarity_measure, data, "item")
         recommender = knn.ItemBasedRecommendationRecommender(
             data, k=k, similarity_measure=similarity_measure
+        )
+    elif recommender_name == "mf":
+        recommender = mf.MFRecommender(
+            data,
+            n_factors=n_factors,
+            lr=lr,
+            regularization=reg,
+            n_epochs=n_epochs
         )
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
@@ -132,6 +151,7 @@ def generate_recommendations(
     strategy_name: str,
     data: Data,
     k: int = 5,
+    threshold: float = 1.0,
     similarity: str = "pearson",
 ) -> Recommendation:
     """
@@ -148,7 +168,9 @@ def generate_recommendations(
         Recommendation: Instance with the top-k recommendations for the user.
     """
     # Load the recommender
-    recommender = load_recommender(recommender_name, data, k=k, similarity_measure=similarity)
+    recommender = load_recommender(
+        recommender_name, data, k=k, threshold=threshold, similarity_measure=similarity
+    )
 
     # Load the strategy
     strategy = load_strategy(strategy_name, data)
@@ -156,7 +178,11 @@ def generate_recommendations(
     # Get the internal test‐set IDs, then map them back to the original IDs
     internal_users = data.get_users(test=True)
     uidx_map, _ = data.get_reverse_mappings()
-    test_users = [uidx_map[u] for u in internal_users]
+    # If a user is not in the training set, it will be excluded from the recommendations
+    # Map the internal user IDs to the original user IDs
+    test_users = [uidx_map.get(user) for user in internal_users]
+    # Filter out users that are not in the training set
+    test_users = [uid for uid in test_users if uid is not None]
 
     # Instance the recommendation object
     recommendations = Recommendation()
@@ -200,13 +226,16 @@ def main():
     )
     # Add the recommender argument
     parser.add_argument(
-        "--recommender", type=str, help="name of the recommender to use", required=True
+        "--recommender",
+        type=str,
+        help="Name of the recommender to use",
+        required=True
     )
     # Add the number of recommendations argument
     parser.add_argument(
         "--n_items_to_recommend",
         type=int,
-        help="number of recommendations to generate",
+        help="Number of recommendations to generate",
         required=False,
         default=10,
     )
@@ -214,7 +243,7 @@ def main():
     parser.add_argument(
         "--strategy",
         type=str,
-        help="recommendation strategy to use",
+        help="Recommendation strategy to use",
         required=False,
         default="exclude_seen",
     )
@@ -222,14 +251,14 @@ def main():
     parser.add_argument(
         "--data_path_train",
         type=str,
-        help="path to the data file",
+        help="Path to the training data file",
         required=True
     )
     # Add the test data path argument
     parser.add_argument(
         "--data_path_test",
         type=str,
-        help="path to the test data file",
+        help="Path to the test data file",
         required=False,
         default="none",
     )
@@ -237,7 +266,7 @@ def main():
     parser.add_argument(
         "--test_size",
         type=float,
-        help="proportion of data to split into test set",
+        help="Proportion of data to split into test set",
         required=False,
         default=0.2,
     )
@@ -245,7 +274,7 @@ def main():
     parser.add_argument(
         "--sep",
         type=str,
-        help="separator for the data file",
+        help="Separator used in the data files",
         required=False,
         default="\t",
     )
@@ -253,39 +282,84 @@ def main():
     parser.add_argument(
         "--ignore_first_line",
         type=bool,
-        help="whether to ignore the first line of the data file",
+        help="Whether to ignore the first line of the data files",
         required=False,
-        default=True,
+        default=False,
     )
     # Add the column names argument
     parser.add_argument(
         "--col_names",
         type=list,
-        help="column names for the data file",
+        help="Column names for the data file",
         required=False,
         default=["user", "item", "rating", "timestamp"],
     )
+
+    # KNN Arguments
     # Add the k argument for KNN recommenders
     parser.add_argument(
         "--k",
         type=int,
-        help="number of neighbors to consider for KNN recommenders",
+        help="Number of neighbors to consider for KNN recommenders",
         required=False,
         default=5,
+    )
+    # Add the threshold argument for KNN recommenders
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        help="Threshold for KNN recommenders",
+        required=False,
+        default=1.0,
     )
     # Add the similarity measure argument for KNN recommenders
     parser.add_argument(
         "--similarity",
         type=str,
-        help="similarity measure to use for KNN recommenders",
+        help="Similarity measure to use for KNN recommenders",
         required=False,
         default="pearson",
     )
+
+    # MATRIX FACTORIZATION Arguments
+    # Add the number of factors argument for matrix factorization
+    parser.add_argument(
+        "--n_factors",
+        type=int,
+        help="Number of latent factors for matrix factorization",
+        required=False,
+        default=20,
+    )
+    # Add the learning rate argument for matrix factorization
+    parser.add_argument(
+        "--lr",
+        type=float,
+        help="Learning rate for matrix factorization",
+        required=False,
+        default=0.01,
+    )
+    # Add the regularization argument for matrix factorization
+    parser.add_argument(
+        "--reg",
+        type=float,
+        help="Regularization strength for matrix factorization",
+        required=False,
+        default=0.1,
+    )
+    # Add the number of epochs argument for matrix factorization
+    parser.add_argument(
+        "--n_epochs",
+        type=int,
+        help="Number of epochs for matrix factorization",
+        required=False,
+        default=10,
+    )
+
     # Add the seed argument
     parser.add_argument(
         "--seed",
         type=int,
-        help="random seed for reproducibility",
+        help="Random seed for reproducibility",
         required=False,
         default=42,
     )
@@ -293,9 +367,9 @@ def main():
     parser.add_argument(
         "--save_path",
         type=str,
-        help="path to save the recommendations",
+        help="Path to save the recommendations",
         required=False,
-        default="data/",
+        default="recommendations/",
     )
     # Parse the arguments
     args = parser.parse_args()
@@ -305,7 +379,12 @@ def main():
 
     # Load the data
     data = Data(
-        args.data_path_train, args.data_path_test, args.sep, args.test_size, args.ignore_first_line, args.col_names
+        args.data_path_train,
+        args.data_path_test,
+        args.sep,
+        args.test_size,
+        args.ignore_first_line,
+        args.col_names,
     )
 
     # Generate recommendations
@@ -315,10 +394,10 @@ def main():
         args.strategy,
         data,
         args.k,
+        args.threshold,
         similarity=args.similarity,
     )
 
-    # TEST 2: Return the recommendations in a file user, item, score per row
     # Create the name for the recommendation file
     name = create_name(
         args.recommender,

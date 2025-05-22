@@ -6,21 +6,26 @@ from src.strategies import Strategy
 from typing import List, Tuple
 import numpy as np
 
-class UserBasedRatingPredictionRecommender(Recommender):
+class UserBasedRankingRecommender(Recommender):
     """
     User-based collaborative filtering recommender system.
 
-    This recommender predicts the rating of an item for a user based on the ratings
-    given by similar users. It uses a similarity measure to find the most similar
-    users and then computes a weighted average of their ratings for the item.
+    Instead of predicting a continuous rating, this recommender computes for each
+    candidate item a score equal to the weighted sum of neighbors who rated the item
+    at or above a threshold.
 
     Attributes:
         data (Data): Data instance with the user-item interactions.
         k (int): Number of similar users to consider for prediction.
+        threshold (float): Rating threshold above which a neighbor “votes” for the item.
         similarity (Similarity): Similarity measure to use for finding similar users.
     """
     def __init__(
-        self, data: Data, k: int = 10, similarity_measure: Similarity | None = None
+        self,
+        data: Data,
+        k: int = 10,
+        similarity_measure: Similarity | None = None,
+        threshold: float = 4.0
     ) -> None:
         """
         Create a new UserBasedRatingPredictionRecommender instance.
@@ -28,11 +33,13 @@ class UserBasedRatingPredictionRecommender(Recommender):
         Parameters:
             data (Data): Data instance with the user-item interactions.
             k (int): Number of similar users to consider for prediction.
+            threshold (float): Rating threshold above which a neighbor “votes” for the item.
             similarity_measure (Similarity|None): Similarity measure to use for finding
                 similar users. If None, the default PearsonCorrelationSimilarity is used.
         """
         super().__init__(data)
         self.k = k
+        self.threshold = threshold
         # If there is no similarity measure, use the default one
         if similarity_measure is None:
             # user–user similarity
@@ -49,6 +56,11 @@ class UserBasedRatingPredictionRecommender(Recommender):
     ) -> Recommendation:
         """
         Recommend items to the user using user-based collaborative filtering.
+
+        For each candidate item i:
+          1. Find the k most similar users to user_id who have rated i
+          2. Let votes_v = 1 if r_{v,i} >= threshold else 0
+          3. score(i) = sum_{v in N_k} (w_{u,v} * votes_v)
 
         Parameters:
             user_id (int): Original user ID.
@@ -67,36 +79,32 @@ class UserBasedRatingPredictionRecommender(Recommender):
         # We initialize the list of recommendations
         predictions: List[Tuple[int, float]] = []
 
-        # We get the active user's history and their average rating
-        user_ratings = self.data.get_interaction_from_user(user_id)
-        # If the user has rated items, calculate the average rating
-        user_avg = (sum(user_ratings.values()) / len(user_ratings)) if user_ratings else 0.0
-
         # Convert external user ID to internal index
         u_idx = self.data.to_internal_user(user_id)
 
-        # For each candidate item, we calculate the predicted rating
         for item in candidates:
             # Retrieve internal users and their ratings for this item
             users_idx, ratings = self.data.get_item_interactions_indices(item)
 
             # Get the precomputed similarities for user u_idx from the similarity class
             sims = self.similarity.sim_matrix[u_idx, users_idx]
+            # only positive contributions
+            sims = np.clip(sims, 0, None)
 
             # Select top-k neighbors by similarity magnitude
             top_k_indices = np.argsort(-np.abs(sims))[: self.k] # Top-k indices
             top_sims = sims[top_k_indices] # Top-k similarities
             top_rats = ratings[top_k_indices] # Top-k ratings
 
-            # Compute the predicted rating using the weighted average prediction
-            # r̂_ui = (Σ_v w_uv * r_vi) / (Σ_v |w_uv|)
-            numerator   = np.dot(top_sims, top_rats)
-            denominator = np.sum(np.abs(top_sims))
-            # If there are no neighbors, use the user's average rating
-            predicted_rating = (numerator / denominator) if denominator > 0 else user_avg
+            # Compute the votes based on the threshold
+            # votes_v = 1 if r_{v,i} >= threshold else 0
+            votes = (top_rats >= self.threshold).astype(float)
 
-            # Add the predicted rating to the recommendations list
-            predictions.append((item, predicted_rating))
+            # We compute the score as the weighted sum of votes
+            score = float(np.dot(top_sims, votes))
+
+            # Add the score to the predictions list
+            predictions.append((item, score))
 
         # Sort the recommendations by predicted rating in descending order
         predictions.sort(key=lambda x: x[1], reverse=True)

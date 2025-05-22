@@ -184,7 +184,6 @@ class Data(AbstractData):
                     data_path_train,
                     sep=sep,
                     header=None,
-                    names=col_names,
                     skiprows=1 if ignore_first_line else 0,
                 )
 
@@ -198,7 +197,6 @@ class Data(AbstractData):
                     data_path_train,
                     sep=sep,
                     header=None,
-                    names=col_names,
                     skiprows=1 if ignore_first_line else 0,
                 )
                 test: pd.DataFrame = pd.read_csv(
@@ -253,13 +251,10 @@ class Data(AbstractData):
 
         Raises:
             ValueError: If the data is not in the expected format.
-            TEST 1: Ver si esto es correcto
         """
-        # Correctly name the columns
+        # Take only the first 4 columns of the data and rename them
+        data = data.iloc[:, :4]
         data.columns = ["user", "item", "rating", "timestamp"]
-
-        # Divide the data into training and testing sets
-        data = data[["user", "item", "rating", "timestamp"]]
 
         if train:
             # Update the total number of users and items
@@ -439,19 +434,31 @@ class Data(AbstractData):
         return dict(zip(user_df["item"], user_df["rating"]))
 
     @staticmethod
-    def _load_recs(path: str) -> dict:
+    def _load_recs(
+        path: str,
+        sep: str = ",",
+        ignore_first_line: bool = False,
+    ) -> dict:
         """
         Load the recommendations from a CSV file.
 
         Parameters:
             path (str): Path to the CSV file.
+            sep (str): Separator used in the CSV file.
+            ignore_first_line (bool): Whether to ignore the first line of the CSV file.
 
         Returns:
             dict: Dictionary with user IDs as keys and lists of recommended items as values.
         """
         # Read the csv file and return the recommendations in a dictionary
         # returns {user_id: [item1, item2, …]}
-        df = pd.read_csv(path, names=["user","item","score"], header=None)
+        df = pd.read_csv(
+            path,
+            sep=sep,
+            skiprows=1 if ignore_first_line else 0,
+            header=None,
+        )
+        df.columns = ["user", "item", "score"]
         recs = {}
         for u, group in df.groupby("user"):
             recs[u] = group.sort_values("score", ascending=False)["item"].tolist()
