@@ -1,8 +1,8 @@
-from src.recommenders import Recommender
-from src.utils import Recommendation
-from src.similarities import Similarity, PearsonCorrelationUsers, PearsonCorrelationItems
-from src.data import Data
-from src.strategies import Strategy
+from src.recommenders.basic_recommenders import Recommender
+from src.utils.utils import Recommendation
+from src.utils.similarities import Similarity, PearsonCorrelationUsers, PearsonCorrelationItems
+from src.datamodule.data import Data
+from src.utils.strategies import Strategy
 from typing import List, Tuple
 import numpy as np
 

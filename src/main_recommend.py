@@ -1,13 +1,14 @@
 import argparse
-import src.knn as knn
-import src.matrix_factorisation as mf
-import src.recommenders as rec
-import src.similarities as sim
-import src.strategies as st
-from src.data import Data
-from src.utils import Recommendation, set_seed
-from src.similarities import Similarity
-from src.strategies import Strategy
+import src.recommenders.knn as knn
+import src.recommenders.matrix_factorisation as mf
+import src.recommenders.basic_recommenders as rec
+import src.utils.similarities as sim
+import src.utils.strategies as st
+from src.datamodule.data import Data
+from src.utils.utils import Recommendation, set_seed
+from src.utils.similarities import Similarity
+from src.utils.strategies import Strategy
+from tqdm import tqdm
 
 
 def load_recommender(
@@ -188,7 +189,7 @@ def generate_recommendations(
     recommendations = Recommendation()
 
     # Generate recommendations
-    for user in test_users:
+    for user in tqdm(test_users, desc="Generating recommendations"):
         recommendations = recommender.recommend(user, strategy, recommendations, n_items_to_recommend)
 
     return recommendations

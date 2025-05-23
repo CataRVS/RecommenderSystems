@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.data import Data
+from src.datamodule.data import Data
 import numpy as np
 
 

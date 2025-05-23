@@ -1,7 +1,7 @@
 import argparse
-import src.evaluation as ev
-from src.data import Data
-from src.utils import set_seed
+import src.evaluation.evaluation as ev
+from src.datamodule.data import Data
+from src.utils.utils import set_seed
 
 def load_evaluation_metric(
         evaluation_name: str,

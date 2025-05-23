@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from src.data import Data
-from src.utils import Recommendation
-from src.strategies import Strategy
+from src.datamodule.data import Data
+from src.utils.utils import Recommendation
+from src.utils.strategies import Strategy
 from typing import Dict, List, Tuple
 import random
 

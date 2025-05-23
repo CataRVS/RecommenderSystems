@@ -1,9 +1,9 @@
 import numpy as np
 import random
-from src.recommenders import Recommender
-from src.utils import Recommendation
-from src.data import Data
-from src.strategies import Strategy
+from src.recommenders.basic_recommenders import Recommender
+from src.utils.utils import Recommendation
+from src.datamodule.data import Data
+from src.utils.strategies import Strategy
 
 class MFRecommender(Recommender):
     """
