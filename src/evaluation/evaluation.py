@@ -110,8 +110,13 @@ class Recall(Evaluation):
                 continue
             # Calculate the number of true positives (TP)
             tp = len(set(items) & ground_truth)
-            # Calculate recall
-            recalls.append(tp / len(ground_truth))
+            # Avoid division by zero
+            if len(ground_truth) > 0:
+                # Calculate recall
+                recalls.append(tp / len(ground_truth))
+            else:
+                # If there are no recalls, return 0.0
+                recalls.append(0.0)
 
         # Return the average recall
         return float(np.mean(recalls)) if recalls else 0.0
@@ -233,6 +238,7 @@ class EPC(Evaluation):
 
 class Gini(Evaluation):
     """
+    # FIXME 3: See what happens with this function and the memory error
     Computes the Gini coefficient of the recommendations.
     """
     def evaluate(
@@ -258,32 +264,31 @@ class Gini(Evaluation):
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
-
         # Transform the recommendations into a list of items
         items = [item for sublist in recommendations.values() for item in sublist]
-        # We count the occurrences of each item
-        item_counts = np.bincount(items)
-        # We sort the counts to compute the Gini coefficient
-        sorted_counts = np.sort(item_counts)
         # If there are no items, return 0.0
-        n = len(sorted_counts)
-        if n == 0:
+        if not items:
             return 0.0
+
+        # Count the occurrences of each item
+        _, counts = np.unique(items, return_counts=True)
+
+        # Sort the counts in ascending order
+        sorted_counts = np.sort(counts)
+        # Get the number of items
+        n = len(sorted_counts)
+        # If there is only one item, return 0.0
+        if n == 1:
+            return 0.0
+
+        # Get the total number of items
+        total = sorted_counts.sum()
         # Calculate the Gini coefficient
-        # Gini = (1 / (n-1)) * Σ(j=1 to n) (2j - n - 1) * p(i_j)
-        # Gini = Σ(i=1 to n) Σ(j=1 to n) |x_i - x_j| / (2 * n^2 * μ)
-        # where μ is the mean of the counts
-
-        # Σ(i=1 to n) Σ(j=1 to n) |x_i - x_j|
-        numerator = np.sum(np.abs(sorted_counts[:, None] - sorted_counts[None, :]))
-        # 2 * n^2 * μ
-        denominator = 2 * n**2 * np.mean(sorted_counts)
-
-        # Gini coefficient
-        gini = numerator / denominator
+        index = np.arange(1, n + 1)
+        gini = (2 * (index * sorted_counts).sum()) / (n * total) - (n + 1) / n
 
         # Return the Gini coefficient
-        return gini
+        return float(gini)
 
 
 class AggregateDiversity(Evaluation):

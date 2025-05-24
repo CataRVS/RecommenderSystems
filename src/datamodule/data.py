@@ -392,10 +392,14 @@ class Data(AbstractData):
         Returns:
             Tuple[np.ndarray, np.ndarray]: Arrays of user indices and corresponding ratings.
         """
+        # Get the internal item id
         item_idx = self.to_internal_item(orig_item_id)
+        # If the item id is not found, return empty arrays
         if item_idx is None:
             return np.array([], dtype=int), np.array([], dtype=float)
+        # Get the user indices and ratings for the item
         col = self.get_train_sparse_matrix()[:, item_idx].tocoo()
+        # Return the user indices and ratings
         return col.row, col.data
 
     def get_user_interactions_indices(
@@ -410,10 +414,14 @@ class Data(AbstractData):
         Returns:
             Tuple[np.ndarray, np.ndarray]: Arrays of item indices and corresponding ratings.
         """
+        # Get the internal user id
         user_idx = self.to_internal_user(orig_user_id)
+        # If the user id is not found, return empty arrays
         if user_idx is None:
             return np.array([], dtype=int), np.array([], dtype=float)
+        # Get the item indices and ratings for the user
         row = self.get_train_sparse_matrix().getrow(user_idx).tocoo()
+        # Return the item indices and ratings
         return row.col, row.data
 
     def get_test_interactions(self, user_id: int) -> dict:
@@ -426,10 +434,14 @@ class Data(AbstractData):
         Returns:
             dict[int, float]: Mapping item_id → rating from the test split.
         """
-        # Filter your internal test DataFrame (which still holds original IDs)
+        # Get the internal user id
+        internal_id = self.to_internal_user(user_id)
+        if user_id is None:
+            return {}
+        # Get the test set
         df = self._test
         # select only rows for this external user
-        user_df = df[df["user"] == user_id]
+        user_df = df[df["user"] == internal_id]
         # build and return a dict {item: rating}
         return dict(zip(user_df["item"], user_df["rating"]))
 
