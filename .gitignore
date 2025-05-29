@@ -6,8 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# TODO: Change this in the future
 # Data folder
-data/
+# data/
 
 # Visual Studio Code
 .vscode/
