@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -32,65 +33,66 @@ class MFRecommender(Recommender):
     def __init__(
         self,
         data: Data,
-        n_factors: int = 20,
+        embedding_dim: int = 20,
         lr: float = 1e-2,
-        regularization: float = 1e-4,
+        weight_decay: float = 1e-4,
         n_epochs: int = 20,
         batch_size: int = 4096,
         device: str | None = None,
     ):
         super().__init__(data)
-        self.n_users: int = data.get_total_users()
-        self.n_items: int = data.get_total_items()
-        self.n_factors = n_factors
-        self.lr = lr
-        self.reg = regularization
-        self.n_epochs = n_epochs
-        self.batch_size = batch_size
+        n_users: int = data.get_total_users()
+        n_items: int = data.get_total_items()
 
         # If no device is specified, we use the default device (CPU or GPU).
         if device is None:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = device
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = torch.device(device)
 
         # Our user and item latent factors are represented as embeddings vectors.
-        self.user_factors = nn.Embedding(self.n_users, n_factors)
-        self.item_factors = nn.Embedding(self.n_items, n_factors)
+        user_factors = nn.Embedding(n_users, embedding_dim)
+        item_factors = nn.Embedding(n_items, embedding_dim)
 
         # We initialize them with a normal distribution ~ N(0, 0.1)
-        nn.init.normal_(self.user_factors.weight, 0, 0.1)
-        nn.init.normal_(self.item_factors.weight, 0, 0.1)
+        nn.init.normal_(user_factors.weight, 0, 0.1)
+        nn.init.normal_(item_factors.weight, 0, 0.1)
 
         # We pass them to the chosen device
-        self.user_factors.to(self.device)
-        self.item_factors.to(self.device)
+        user_factors.to(device)
+        item_factors.to(device)
 
         # We create the optimizer for the user and item factors.
-        self.optimizer = torch.optim.SGD(
-            list(self.user_factors.parameters()) + list(self.item_factors.parameters()),
-            lr=self.lr,
-            weight_decay=self.reg,
+        optimizer = torch.optim.AdamW(
+            list(user_factors.parameters()) + list(item_factors.parameters()),
+            lr=lr,
+            weight_decay=weight_decay,
         )
+
+        # We create the loss function for the user and item factors.
+        loss = nn.MSELoss()
+
         # We train the model using stochastic gradient descent (SGD).
-        self._train_sgd()
+        self.user_factors, self.item_factors = self._train(
+            user_factors,
+            item_factors,
+            optimizer,
+            loss,
+            n_epochs,
+            batch_size,
+            device,
+        )
 
-        # Finally, we move the user and item factors to the cpu and convert them to numpy arrays.
-        # This is done to save memory and to make it easier to use them in the recommend method.
-        self.user_factors_np = self.user_factors.weight.detach().cpu().numpy()
-        self.item_factors_np = self.item_factors.weight.detach().cpu().numpy()
-
-    def _train_sgd(self):
+    def _train(
+        self,
+        user_factors: nn.Embedding,
+        item_factors: nn.Embedding,
+        optimizer: torch.optim.Optimizer,
+        criterion: nn.Module,
+        num_epochs: int,
+        batch_size: int,
+        device: torch.device,
+    ):
         """
-        Train the model using stochastic gradient descent (SGD) to minimize the squared
-        error between the predicted ratings and the actual ratings in the training data.
-        The model learns latent factors for users and items, and uses these factors to
-        predict ratings.
-
-        The training data is loaded in batches using a DataLoader, and the model is
-        trained for a specified number of epochs. The loss is computed using mean squared
-        error (MSE) between the predicted ratings and the actual ratings. The model
-        parameters are updated using the optimizer.
-        The training process is displayed using a progress bar.
 
         """
         # Get the training data as a sparse matrix in COO format to get the
@@ -99,42 +101,63 @@ class MFRecommender(Recommender):
         users_t = torch.as_tensor(train_mat.row, dtype=torch.long)
         items_t = torch.as_tensor(train_mat.col, dtype=torch.long)
         ratings_t = torch.as_tensor(train_mat.data, dtype=torch.float32)
+
         # Create a TensorDataset and DataLoader to handle the training data.
         dataset = TensorDataset(users_t, items_t, ratings_t)
+
         # Create a DataLoader to iterate over the dataset in batches.
         dataloader = DataLoader(
             dataset,
-            batch_size=self.batch_size,
-            shuffle=True,  # barajamos interacciones; también se podría barajar usuarios
+            batch_size=batch_size,
+            shuffle=True,
             drop_last=False
         )
+
         # Set the model to training mode.
-        self.user_factors.train()
-        self.item_factors.train()
+        user_factors.train()
+        item_factors.train()
+
         # Iterate over the number of epochs.
-        for epoch in tqdm(range(self.n_epochs), desc="Training MF", unit="epoch"):
+        for _ in tqdm(range(num_epochs), desc="Training MF", unit="epoch"):
             # Set the epoch loss to 0.
             epoch_loss = 0.0
             # Iterate over the DataLoader to get batches of data.
             for u, i, r in dataloader:
                 # Move the data to the specified device (CPU or GPU).
-                u = u.to(self.device)
-                i = i.to(self.device)
-                r = r.to(self.device)
+                u = u.to(device)
+                i = i.to(device)
+                r = r.to(device)
 
-                # The predicted ratings are computed as the dot product of the user and
-                # item factors.
-                preds = (self.user_factors(u) * self.item_factors(i)).sum(dim=1)
+                # We reset the gradients to zero before the backward pass.
+                optimizer.zero_grad()
 
-                # Compute the loss using mean squared error (MSE) between the predicted
-                # ratings and the actual ratings.
-                loss = nn.functional.mse_loss(preds, r)
+                # Forward pass of the model: compute the predicted ratings by taking the
+                # dot product of the user and item factors.
+                pred_rating = (user_factors(u) * item_factors(i)).sum(dim=1)
 
-                self.optimizer.zero_grad()
+                # Compute the loss
+                loss = criterion(pred_rating, r)
+
+                # Backward pass: compute the gradients.
                 loss.backward()
-                self.optimizer.step()
+
+                # Update the model parameters using the optimizer.
+                optimizer.step()
 
                 epoch_loss += loss.item() * u.size(0)
+
+            # Print the loss every epoch.
+            print(f"Loss: {epoch_loss / len(dataset):.4f}")
+
+        # Print the final loss.
+        print(f"Final Loss: {epoch_loss / len(dataset):.4f}")
+
+        # Finally, we move the user and item factors to the cpu and convert them to numpy arrays.
+        # This is done to save memory and to make it easier to use them in the recommend method.
+        return (
+            user_factors.weight.detach().cpu().numpy(),
+            item_factors.weight.detach().cpu().numpy(),
+        )
 
     def recommend(
         self,
@@ -143,19 +166,31 @@ class MFRecommender(Recommender):
         recommendation: Recommendation | None = None,
         n: int = 10,
     ) -> Recommendation:
+
+        # If no recommendation object is passed, we create a new one.
         if recommendation is None:
             recommendation = Recommendation()
-        # Get the candidates for the user using the strategy.
+
+        # Get the candidates for the user using the strategy given.
         candidates = strategy.filter(user_id)
+
+        # If no candidates are found, we return the recommendation object.
+        if not candidates:
+            return recommendation
+
+        # Get the internal user index for the user.
         u_idx = self.data.to_internal_user(user_id)
+        # If the user is not in the training data, we return the recommendation object.
         if u_idx is None:
             return recommendation
-        # Get the user latent factors for the user.
-        u_vec = self.user_factors_np[u_idx]
+
+        # Get the user latent factors
+        u_vec = self.user_factors[u_idx]
         # Map the candidates to their internal indices.
-        # Filter out candidates that are not in the training data.
         mapped = [(cand, self.data.to_internal_item(cand)) for cand in candidates]
+        # Filter out candidates that are not in the training data.
         valid = [(cand, idx) for cand, idx in mapped if idx is not None]
+        # If no valid candidates are found, we return the recommendation object.
         if not valid:
             return recommendation
         # Get the item indices and their corresponding internal indices.
@@ -163,15 +198,16 @@ class MFRecommender(Recommender):
         items_list, idx_list = zip(*valid)
 
         # Convert the list of indices to a numpy array.
-        # This is done to speed up the dot product operation.
         idx_arr = np.fromiter(idx_list, dtype=np.int64)
 
         # Compute the scores for each candidate item by taking the dot product of the
         # item factors and the user factors.
-        scores = self.item_factors_np[idx_arr].dot(u_vec)
+        scores = self.item_factors[idx_arr].dot(u_vec)
 
+        # If the number of candidates is less than n, we set n to the number of candidates.
+        if len(scores) < n:
+            n = len(scores)
         # Get the top n items with the highest scores.
-        # We use argpartition to get the indices of the top n items.
         top_idx = np.argpartition(-scores, n - 1)[:n]
         top_sorted = top_idx[np.argsort(-scores[top_idx])]
 
@@ -183,8 +219,145 @@ class MFRecommender(Recommender):
         recommendation.add_recommendations(user_id, recs)
         return recommendation
 
+
 class BPRMFRecommender(Recommender):
     """
-    BPR-MF Recommender System using Bayesian Personalized Ranking (BPR) with Matrix Factorization.
+    BPR-MF Recommender: Matrix Factorization optimized with Bayesian Personalized Ranking.
     """
-    
+    def __init__(
+        self,
+        data: Data,
+        embedding_dim: int = 20,
+        lr: float = 1e-2,
+        weight_decay: float = 1e-4,
+        n_epochs: int = 20,
+        device: str | None = None,
+    ):
+        super().__init__(data)
+        n_users = data.get_total_users()
+        n_items = data.get_total_items()
+
+        # If no device is specified, we use the default device (CPU or GPU).
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Our user and item latent factors are represented as embeddings vectors.
+        user_factors = nn.Embedding(n_users, embedding_dim)
+        item_factors = nn.Embedding(n_items, embedding_dim)
+
+        # We initialize them with a normal distribution ~ N(0, 0.1)
+        nn.init.normal_(user_factors.weight, 0, 0.1)
+        nn.init.normal_(item_factors.weight, 0, 0.1)
+
+        # We pass them to the chosen device
+        user_factors.to(device)
+        item_factors.to(device)
+
+        # We create the optimizer for the user and item factors.
+        optimizer = torch.optim.AdamW(
+            list(user_factors.parameters()) + list(item_factors.parameters()),
+            lr=lr,
+            weight_decay=weight_decay,
+        )
+
+        # We train the model using stochastic gradient descent (SGD).
+        self.user_factors, self.item_factors = self._train(
+            user_factors,
+            item_factors,
+            optimizer,
+            n_epochs,
+            # FIXME
+            # batch_size,
+            device,
+        )
+
+    def _train(self, user_factors, item_factors, optimizer, n_epochs, device):
+        """
+        
+        """
+        # Get the training data as a sparse matrix in COO format to get the
+        # user, item and rating tensors.
+        train_mat = self.data.get_train_sparse_matrix().tocoo()
+
+        # Create a dictionary to hold user interactions for sampling.
+        # This will map user indices to lists of item indices they have interacted with.
+        interactions = {}
+        for u, i in zip(train_mat.row, train_mat.col):
+            interactions.setdefault(u, []).append(i)
+
+        # Convert the user interactions to a numpy array for sampling.
+        all_items = np.arange(self.data.get_total_items())
+        # Training loop for BPR-MF
+        for epoch in range(1, n_epochs+1):
+            loss_epoch = 0.0
+            num_updates = train_mat.nnz
+            pbar = tqdm(range(num_updates), desc=f"BPR-MF Epoch {epoch}")
+            for _ in pbar:
+                # Sample a user with at least one interaction
+                u = random.choice(list(interactions.keys()))
+                pos_items = interactions[u]
+                i = random.choice(pos_items)
+                # Sample negative item j
+                j = random.choice(all_items)
+                while j in pos_items:
+                    j = random.choice(all_items)
+                # Prepare tensors
+                u_t = torch.tensor(u, dtype=torch.long, device=device)
+                i_t = torch.tensor(i, dtype=torch.long, device=device)
+                j_t = torch.tensor(j, dtype=torch.long, device=device)
+                # Forward pass
+                u_vec = user_factors(u_t)
+                i_vec = item_factors(i_t)
+                j_vec = item_factors(j_t)
+                xui = (u_vec * i_vec).sum()
+                xuj = (u_vec * j_vec).sum()
+
+                # Compute loss using BPR loss function
+                # BPR loss is -log(sigmoid(xui - xuj))
+                loss = -torch.log(torch.sigmoid(xui - xuj) + 1e-8)
+
+                # Backward pass and optimization
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                loss_epoch += loss.item()
+
+                pbar.set_postfix({'loss': loss_epoch / (pbar.n+1)})
+
+        # Print the final loss for the last epoch.
+        print(f"Final Loss: {loss_epoch / num_updates:.4f}")
+
+        # Finally, we move the user and item factors to the cpu and convert them to
+        # numpy arrays.
+        return (
+            user_factors.weight.detach().cpu().numpy(),
+            item_factors.weight.detach().cpu().numpy(),
+        )
+
+    def recommend(
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation | None = None,
+        n: int = 10,
+    ) -> Recommendation:
+        if recommendation is None:
+            recommendation = Recommendation()
+        candidates = strategy.filter(user_id)
+        u_idx = self.data.to_internal_user(user_id)
+        if u_idx is None:
+            return recommendation
+        u_vec = self.user_factors[u_idx]
+        mapped = [(cand, self.data.to_internal_item(cand)) for cand in candidates]
+        valid = [(cand, idx) for cand, idx in mapped if idx is not None]
+        if not valid:
+            return recommendation
+        items_list, idx_list = zip(*valid)
+        idx_arr = np.fromiter(idx_list, dtype=np.int64)
+        scores = self.item_factors[idx_arr].dot(u_vec)
+        top_k = min(n, len(scores))
+        top_idx = np.argpartition(-scores, top_k-1)[:top_k]
+        top_sorted = top_idx[np.argsort(-scores[top_idx])]
+        recs = [(items_list[i], float(scores[i])) for i in top_sorted]
+        recommendation.add_recommendations(user_id, recs)
+        return recommendation

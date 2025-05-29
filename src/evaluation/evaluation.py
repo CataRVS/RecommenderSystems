@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.datamodule.data import Data
+from typing import Dict, List
 import numpy as np
 
 
@@ -185,7 +186,11 @@ class NDCG(Evaluation):
 class EPC(Evaluation):
     """
     DUDA 1: Que es EPC?
-    Computes the expected precision (EP) of the recommendations.
+    Expected Popularity Complement (EPC) of the recommendations.
+
+    EPC@k(u) = (1/k) Σ_{i∈L_{u,k}} (1 - pop(i)) where:
+    - L_{u,k} is the list of k recommended items for user u and
+    - pop(i) = |UsersWhoConsumed(i)| / |U|.
     """
 
     def evaluate(
@@ -207,38 +212,48 @@ class EPC(Evaluation):
         """
         # TODO 4: Implement expected precision evaluation
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations: Dict[int, List[int]] = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
+        # If there are no recommendations, return 0.0
+        if not recommendations:
+            return 0.0
 
-        # Calculate expected precision for each user
-        ep_scores = []
+        # Get the total number of users
+        num_users = len(self.data.get_users())
+        # If there are no users, return 0.0
+        if num_users == 0:
+            return 0.0
+        
+        # Get the total number of items and the number of items in the recommendations
+        all_items = {i for lst in recommendations.values() for i in lst}
+        pop_cache: Dict[int, float] = {}
+
+        # Calculate the popularity of each item
+        for item in all_items:
+            # Get the number of users who consumed the item
+            num_users_consumed = len(self.data.get_interaction_from_item(item))
+            # Calculate the popularity of the item
+            pop_cache[item] = num_users_consumed / num_users
+
+        # Calculate EPC for each user
+        epc_scores: List[float] = []
+        # Iterate over each user and their recommended items
         for u, items in recommendations.items():
-            # ground‐truth items in the test set
-            gt = set(self.data.get_test_interactions(u).keys())
+            # Get the test interactions for the user (the ground truth)
             if not items:
+                epc_scores.append(0.0)
                 continue
-
-            # build binary relevance vector
-            rel = [1 if i in gt else 0 for i in items]
-
-            # compute precision@j for each prefix j
-            cum_rel = 0
-            precisions = []
-            for j, r in enumerate(rel, start=1):
-                cum_rel += r
-                precisions.append(cum_rel / j)
-
-            # EP(u) = mean_j precision@j
-            ep_scores.append(sum(precisions) / len(precisions))
-
-        # return macro‐averaged EP
-        return float(np.mean(ep_scores)) if ep_scores else 0.0
-
+            # Calculate the complement sum
+            # The complement sum is the sum of (1 - pop(i)) for each item i in the recommendations
+            complement_sum = sum(1.0 - pop_cache.get(i, 0.0) for i in items)
+            # Append the average EPC score for the user
+            epc_scores.append(complement_sum / len(items))
+        # Return the average EPC score
+        return float(np.mean(epc_scores)) if epc_scores else 0.0
 
 class Gini(Evaluation):
     """
-    # FIXME 3: See what happens with this function and the memory error
     Computes the Gini coefficient of the recommendations.
     """
     def evaluate(

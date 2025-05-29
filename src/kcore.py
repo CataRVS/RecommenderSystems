@@ -19,20 +19,20 @@ def apply_k_core(df, k):
     return df
 
 def main(input_file, output_file, k):
-    print(f"Cargando datos desde {input_file}...")
+    print(f"Loading data frmo {input_file}...")
     df = pd.read_csv(input_file, sep='\t', header=None)
 
-    print(f"Aplicando {k}-core filtering...")
+    print(f"Applying {k}-core filtering...")
     filtered_df = apply_k_core(df, k)
 
-    print(f"Guardando resultados en {output_file}...")
-    filtered_df.to_csv(output_file, sep='\t', index=False)
+    print(f"Saving results in {output_file}...")
+    filtered_df.to_csv(output_file, sep='\t', index=False, header=False)
 
-    print(f"Filtrado completo. Filas restantes: {filtered_df.shape[0]}")
+    print(f"Completed filtering. Remaining rows: {filtered_df.shape[0]}")
 
 if __name__ == "__main__":
-    input_filename = "../data/NewYork/US_NewYork_Processed.txt"
-    k = 10
-    output_filename = f"../data/NewYork/US_NewYork_Processed_Shortened_{k}.txt"
+    input_filename = "data/NewYork/US_NewYork_Processed.txt"
+    k = 5
+    output_filename = f"data/NewYork/US_NewYork_Processed_Shortened_kcore_{k}.txt"
 
     main(input_filename, output_filename, k)

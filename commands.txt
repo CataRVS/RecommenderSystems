@@ -1,3 +1,4 @@
+# Shortened_10 with exclude_seen
 python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/'
 python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/'
 
@@ -20,7 +21,7 @@ python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'dat
 python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_10/'
 
 
-
+# Shortened_10 with no_filtering
 python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
 python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
 
@@ -43,7 +44,27 @@ python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'dat
 python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
 
 
+# Shortened with exclude_seen
+python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'pearson' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'pearson' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 
 
 

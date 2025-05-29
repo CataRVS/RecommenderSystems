@@ -1,4 +1,5 @@
 import argparse
+import os
 import src.recommenders.knn as knn
 import src.recommenders.matrix_factorisation as mf
 import src.recommenders.basic_recommenders as rec
@@ -20,7 +21,9 @@ def load_recommender(
     n_factors: int = 20,
     lr: float = 0.01,
     reg: float = 0.1,
-    n_epochs: int = 10
+    n_epochs: int = 10,
+    batch_size: int = 4096,
+    device: str | None = None,
 ) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
@@ -41,6 +44,8 @@ def load_recommender(
         lr (float): Learning rate for matrix factorization.
         reg (float): Regularization strength for matrix factorization.
         n_epochs (int): Number of epochs for matrix factorization.
+        batch_size (int): Mini-batch size for matrix factorization.
+        device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -68,10 +73,12 @@ def load_recommender(
     elif recommender_name == "mf":
         recommender = mf.MFRecommender(
             data,
-            n_factors=n_factors,
+            embedding_dim=n_factors,
             lr=lr,
-            regularization=reg,
-            n_epochs=n_epochs
+            weight_decay=reg,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            device=device,
         )
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
@@ -154,6 +161,12 @@ def generate_recommendations(
     k: int = 5,
     threshold: float = 1.0,
     similarity: str = "pearson",
+    n_factors: int = 20,
+    lr: float = 0.01,
+    reg: float = 0.1,
+    n_epochs: int = 10,
+    batch_size: int = 4096,
+    device: str | None = None,
 ) -> Recommendation:
     """
     Generate recommendations using the specified recommender system.
@@ -170,7 +183,17 @@ def generate_recommendations(
     """
     # Load the recommender
     recommender = load_recommender(
-        recommender_name, data, k=k, threshold=threshold, similarity_measure=similarity
+        recommender_name,
+        data,
+        k=k,
+        threshold=threshold,
+        similarity_measure=similarity,
+        n_factors=n_factors,
+        lr=lr,
+        reg=reg,
+        n_epochs=n_epochs,
+        batch_size=batch_size,
+        device=device,
     )
 
     # Load the strategy
@@ -201,22 +224,49 @@ def create_name(
     strategy_name: str,
     k: int = 5,
     similarity_name: str = "pearson",
+    n_factors: int | None = None,
+    lr: float | None = None,
+    reg: float | None = None,
+    n_epochs: int | None = None,
+    batch_size: int | None = None
 ) -> str:
     """
     Create a name for the recommendation file based on the parameters used to generate
     the recommendations.
 
+    Parameters:
+        recommender_name (str): Name of the recommender used.
+        n_items_to_recommend (int): Number of recommendations generated.
+        strategy_name (str): Name of the recommendation strategy used.
+        k (int): Number of neighbors for KNN recommenders.
+        similarity_name (str): Similarity measure used for KNN recommenders.
+        n_factors (int | None): Number of factors for matrix factorization.
+        lr (float | None): Learning rate for matrix factorization.
+        reg (float | None): Regularization strength for matrix factorization.
+        n_epochs (int | None): Number of epochs for matrix factorization.
+        batch_size (int | None): Batch size for matrix factorization.
+
     Returns:
         str: Name of the recommendation file.
     """
-    name = f"{recommender_name}_{n_items_to_recommend}_{strategy_name}"
-    if recommender_name == "knn_user" or recommender_name == "knn_item":
-        name += f"_k{k}_{similarity_name}"
+    parts = [recommender_name, str(n_items_to_recommend), strategy_name]
 
-    name += ".csv"
+    # Detalle extra para KNN
+    if recommender_name in {"knn_user", "knn_item"}:
+        parts.extend([f"k{k}", similarity_name])
 
-    return name
+    # Detalle extra para Matrix Factorization
+    elif recommender_name == "mf":
+        parts.extend([
+            f"f{n_factors}",
+            f"lr{str(lr).replace('.', 'p')}",
+            f"reg{str(reg).replace('.', 'p')}",
+            f"ep{n_epochs}",
+            f"bs{batch_size}",
+        ])
 
+    filename = "_".join(parts) + ".csv"
+    return filename
 
 def main():
     """
@@ -355,6 +405,20 @@ def main():
         required=False,
         default=10,
     )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        help="Mini-batch size for matrix factorization",
+        required=False,
+        default=4096,
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        help="cuda, cpu or leave empty for auto-detect",
+        required=False,
+        default=None,
+    )
 
     # Add the seed argument
     parser.add_argument(
@@ -390,23 +454,43 @@ def main():
 
     # Generate recommendations
     recommendations = generate_recommendations(
-        args.recommender,
-        args.n_items_to_recommend,
-        args.strategy,
-        data,
-        args.k,
-        args.threshold,
+        recommender_name=args.recommender,
+        n_items_to_recommend=args.n_items_to_recommend,
+        strategy_name=args.strategy,
+        data=data,
+        k=args.k,
+        threshold=args.threshold,
         similarity=args.similarity,
+        n_factors=args.n_factors,
+        lr=args.lr,
+        reg=args.reg,
+        n_epochs=args.n_epochs,
+        batch_size=args.batch_size,
+        device=args.device,
     )
+
 
     # Create the name for the recommendation file
     name = create_name(
-        args.recommender,
-        args.n_items_to_recommend,
-        args.strategy,
-        args.k,
-        args.similarity,
+        recommender_name=args.recommender,
+        n_items_to_recommend=args.n_items_to_recommend,
+        strategy_name=args.strategy,
+        k=args.k,
+        similarity_name=args.similarity,
+        n_factors=args.n_factors,
+        lr=args.lr,
+        reg=args.reg,
+        n_epochs=args.n_epochs,
+        batch_size=args.batch_size
     )
+
+    # If the save path does not end with a slash, add it
+    if not args.save_path.endswith("/"):
+        args.save_path += "/"
+    # If the save path does not exist, create it
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+
     # Include the path to the file
     name = args.save_path + name
     # Save the recommendations

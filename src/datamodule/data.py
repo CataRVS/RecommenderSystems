@@ -426,7 +426,7 @@ class Data(AbstractData):
 
     def get_test_interactions(self, user_id: int) -> dict:
         """
-        Return the test‐set interactions for a given user.
+        Return the test-set interactions for a given user.
 
         Parameters:
             user_id (int): External user ID.
@@ -434,15 +434,11 @@ class Data(AbstractData):
         Returns:
             dict[int, float]: Mapping item_id → rating from the test split.
         """
-        # Get the internal user id
-        internal_id = self.to_internal_user(user_id)
-        if user_id is None:
-            return {}
         # Get the test set
         df = self._test
-        # select only rows for this external user
-        user_df = df[df["user"] == internal_id]
-        # build and return a dict {item: rating}
+        # Select only rows for this external user
+        user_df = df[df["user"] == user_id]
+        # Build and return a dict {item: rating}
         return dict(zip(user_df["item"], user_df["rating"]))
 
     @staticmethod
