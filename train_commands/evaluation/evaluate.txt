@@ -1,0 +1,9 @@
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '64' '--lr' '0.005' '--reg' '0.05' '--n_epochs' '30'
+
+
+python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/popularity_5_exclude_seen.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
+python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/random_5_exclude_seen.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
+python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/knn_user_5_exclude_seen_k1_pearson.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
+python -m src.main_evaluate '--metric' 'precision' '--recommendations_path' 'recommendations/NewYork_10/mf_5_no_filtering_f128_lr0p005_reg0p02_ep100_bs4096.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
+
+

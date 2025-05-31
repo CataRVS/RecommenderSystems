@@ -1,7 +1,24 @@
-# Shortened_10 with exclude_seen
-python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/'
-python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/'
+# MovieLens 100K u1
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
 
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'pearson' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'cosine' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
+
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'pearson' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--threshold' '4.0' '--save_path' 'recommendations/ml-100k/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--save_path' 'recommendations/ml-100k/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'pearson' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '5' '--similarity' 'cosine' '--save_path' 'recommendations/ml-100k/'
+
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'pearson' '--save_path' 'recommendations/ml-100k/'
+python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--save_path' 'recommendations/ml-100k/'
+
+
+# Shortened_10 with exclude_seen
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_10/'
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_10/'
 
@@ -22,9 +39,6 @@ python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'dat
 
 
 # Shortened_10 with no_filtering
-python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
-python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
-
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_10/' '--strategy' 'no_filtering'
 
@@ -45,9 +59,6 @@ python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'dat
 
 
 # Shortened with exclude_seen
-python -m src.main_recommend '--recommender' 'popularity' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
-python -m src.main_recommend '--recommender' 'random' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
-
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'pearson' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 python -m src.main_recommend '--recommender' 'knn_user' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '1' '--similarity' 'cosine' '--threshold' '0.5' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 
@@ -66,29 +77,3 @@ python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'dat
 python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'pearson' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 python -m src.main_recommend '--recommender' 'knn_item' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10_Processed.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--k' '10' '--similarity' 'cosine' '--save_path' 'recommendations/NewYork_Shortened_10_Processed/'
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '64' '--lr' '0.005' '--reg' '0.05' '--n_epochs' '30'
-
-
-python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/popularity_5_exclude_seen.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
-python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/random_5_exclude_seen.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
-python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/knn_user_5_exclude_seen_k1_pearson.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
-python -m src.main_evaluate '--metric' 'precision' '--recommendations_path' 'recommendations/NewYork_10/mf_5_no_filtering_f128_lr0p005_reg0p02_ep100_bs4096.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
-
-
-
-
-python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '128' '--lr' '0.005' '--reg' '0.02' '--n_epochs' '100'

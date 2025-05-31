@@ -252,6 +252,48 @@ class EPC(Evaluation):
         # Return the average EPC score
         return float(np.mean(epc_scores)) if epc_scores else 0.0
 
+
+class AggregateDiversity(Evaluation):
+    """
+    Computes the aggregate diversity of the recommendations.
+    """
+    def evaluate(
+            self,
+            recommendations_path: str,
+            recommendations_sep: str = ",",
+            ignore_first_line: bool = False
+        ) -> float:
+        """
+        Evaluate the recommendations.
+
+        Parameters:
+            recommendations_path (str): Path to the recommendations file.
+            recommendations_sep (str): Separator used in the recommendations file.
+            ignore_first_line (bool): Whether to ignore the first line of the recommendations file.
+
+        Returns:
+            float: Aggregate diversity score.
+        """
+        # TEST 6: Implement aggregate diversity evaluation
+        # Load the recommendations
+        recommendations = self.data._load_recs(
+            recommendations_path, recommendations_sep, ignore_first_line
+        )
+
+        # Get all items in the recommendations
+        all_items = [
+            item for sublist in recommendations.values() for item in sublist
+        ]
+        # Calculate the number of unique items
+        num_unique_items = len(set(all_items))
+        # Calculate the total number of items recommended
+        total_items = len(all_items)
+        # Calculate the aggregate diversity
+        aggregate_diversity = num_unique_items / total_items if total_items > 0 else 0.0
+        # Return the aggregate diversity score
+        return aggregate_diversity
+
+
 class Gini(Evaluation):
     """
     Computes the Gini coefficient of the recommendations.
@@ -304,44 +346,3 @@ class Gini(Evaluation):
 
         # Return the Gini coefficient
         return float(gini)
-
-
-class AggregateDiversity(Evaluation):
-    """
-    Computes the aggregate diversity of the recommendations.
-    """
-    def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
-        """
-        Evaluate the recommendations.
-
-        Parameters:
-            recommendations_path (str): Path to the recommendations file.
-            recommendations_sep (str): Separator used in the recommendations file.
-            ignore_first_line (bool): Whether to ignore the first line of the recommendations file.
-
-        Returns:
-            float: Aggregate diversity score.
-        """
-        # TEST 6: Implement aggregate diversity evaluation
-        # Load the recommendations
-        recommendations = self.data._load_recs(
-            recommendations_path, recommendations_sep, ignore_first_line
-        )
-
-        # Get all items in the recommendations
-        all_items = [
-            item for sublist in recommendations.values() for item in sublist
-        ]
-        # Calculate the number of unique items
-        num_unique_items = len(set(all_items))
-        # Calculate the total number of items recommended
-        total_items = len(all_items)
-        # Calculate the aggregate diversity
-        aggregate_diversity = num_unique_items / total_items if total_items > 0 else 0.0
-        # Return the aggregate diversity score
-        return aggregate_diversity

@@ -8,7 +8,7 @@ __pycache__/
 
 # TODO: Change this in the future
 # Data folder
-# data/
+data/
 
 # Visual Studio Code
 .vscode/

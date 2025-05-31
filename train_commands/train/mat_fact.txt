@@ -1,0 +1,19 @@
+# MovieLens 100K u1
+
+
+
+# Shortened_10 with exclude_seen
+
+
+# Shortened_10 with no_filtering
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '32' '--lr' '0.005' '--reg' '0.005' '--n_epochs' '30'
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '64' '--lr' '0.005' '--reg' '0.005' '--n_epochs' '30'
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '128' '--lr' '0.005' '--reg' '0.005' '--n_epochs' '30'
+
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '32' '--lr' '0.001' '--reg' '0.005' '--n_epochs' '100'
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '64' '--lr' '0.001' '--reg' '0.005' '--n_epochs' '100'
+
+python -m src.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'recommendations/NewYork_10/' '--n_factors' '128' '--lr' '0.005' '--reg' '0.02' '--n_epochs' '100'
+
+
+# Processed with exclude_seen
