@@ -7,9 +7,8 @@ from typing import Dict, List, Tuple
 
 class NeuralNetworkRecommender(Recommender):
     """
-    Neural Network Recommender System using a feedforward neural network.
+    Neural Network Recommender System using a Multi-Layer Perceptron (MLP).
     
     Attributes:
         data (Data): user-item interaction data
-        model (nn.Module): PyTorch model for the recommender system
     """

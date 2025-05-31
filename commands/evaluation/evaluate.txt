@@ -7,3 +7,4 @@ python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_
 python -m src.main_evaluate '--metric' 'precision' '--recommendations_path' 'recommendations/NewYork_10/mf_5_no_filtering_f128_lr0p005_reg0p02_ep100_bs4096.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'
 
 
+python -m src.main_evaluate '--metric' 'aggregate_diversity' '--recommendations_path' 'recommendations/NewYork_10/bprmf_5_exclude_seen.csv' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1'

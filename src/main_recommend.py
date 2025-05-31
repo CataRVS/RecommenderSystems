@@ -32,6 +32,7 @@ def load_recommender(
     - knn_user: User-based collaborative filtering recommender.
     - knn_item: Item-based collaborative filtering recommender.
     - mf: Matrix factorization recommender.
+    - bprmf: Bayesian Personalized Ranking Matrix Factorization recommender.
     - UPDATE 1: Add more recommenders if needed.
 
     Parameters:
@@ -72,6 +73,16 @@ def load_recommender(
         )
     elif recommender_name == "mf":
         recommender = mf.MFRecommender(
+            data,
+            embedding_dim=n_factors,
+            lr=lr,
+            weight_decay=reg,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            device=device,
+        )
+    elif recommender_name == "bprmf":
+        recommender = mf.BPRMFRecommender(
             data,
             embedding_dim=n_factors,
             lr=lr,

@@ -3,10 +3,12 @@ import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from src.recommenders.basic_recommenders import Recommender
 from src.datamodule.data import Data
+from src.utils.datasets import BPRDataset
 from src.utils.utils import Recommendation
 from src.utils.strategies import Strategy
 
@@ -39,10 +41,14 @@ class MFRecommender(Recommender):
         n_epochs: int = 20,
         batch_size: int = 4096,
         device: str | None = None,
+        log_dir: str = "runs/mf_recommender",
     ):
         super().__init__(data)
         n_users: int = data.get_total_users()
         n_items: int = data.get_total_items()
+
+        # Create the Writer for TensorBoard logging.
+        self.writer = SummaryWriter(log_dir)
 
         # If no device is specified, we use the default device (CPU or GPU).
         if device is None:
@@ -82,6 +88,9 @@ class MFRecommender(Recommender):
             device,
         )
 
+        # Close the TensorBoard writer.
+        self.writer.close()
+
     def _train(
         self,
         user_factors: nn.Embedding,
@@ -118,7 +127,7 @@ class MFRecommender(Recommender):
         item_factors.train()
 
         # Iterate over the number of epochs.
-        for _ in tqdm(range(num_epochs), desc="Training MF", unit="epoch"):
+        for epoch in tqdm(range(1, num_epochs + 1), desc="MF Training", unit="epoch"):
             # Set the epoch loss to 0.
             epoch_loss = 0.0
             # Iterate over the DataLoader to get batches of data.
@@ -146,8 +155,10 @@ class MFRecommender(Recommender):
 
                 epoch_loss += loss.item() * u.size(0)
 
-            # Print the loss every epoch.
-            print(f"Loss: {epoch_loss / len(dataset):.4f}")
+            # Log the average loss for the epoch to TensorBoard.
+            avg_loss = epoch_loss / len(dataset)
+            self.writer.add_scalar("MF_Loss/train", avg_loss, epoch)
+            tqdm.write(f"Epoch {epoch} Loss: {avg_loss:.4f}")
 
         # Print the final loss.
         print(f"Final Loss: {epoch_loss / len(dataset):.4f}")
@@ -231,11 +242,16 @@ class BPRMFRecommender(Recommender):
         lr: float = 1e-2,
         weight_decay: float = 1e-4,
         n_epochs: int = 20,
+        batch_size: int = 4096,
         device: str | None = None,
+        log_dir: str = "runs/bprmf_recommender",
     ):
         super().__init__(data)
         n_users = data.get_total_users()
         n_items = data.get_total_items()
+
+        # Create the Writer for TensorBoard logging.
+        self.writer = SummaryWriter(log_dir)
 
         # If no device is specified, we use the default device (CPU or GPU).
         if device is None:
@@ -266,12 +282,14 @@ class BPRMFRecommender(Recommender):
             item_factors,
             optimizer,
             n_epochs,
-            # FIXME
-            # batch_size,
+            batch_size,
             device,
         )
 
-    def _train(self, user_factors, item_factors, optimizer, n_epochs, device):
+        # Close the TensorBoard writer.
+        self.writer.close()
+
+    def _train(self, user_factors, item_factors, optimizer, n_epochs, batch_size, device):
         """
         
         """
@@ -279,53 +297,58 @@ class BPRMFRecommender(Recommender):
         # user, item and rating tensors.
         train_mat = self.data.get_train_sparse_matrix().tocoo()
 
-        # Create a dictionary to hold user interactions for sampling.
-        # This will map user indices to lists of item indices they have interacted with.
-        interactions = {}
-        for u, i in zip(train_mat.row, train_mat.col):
-            interactions.setdefault(u, []).append(i)
+        # Create a BPRDataset to handle the training data.
+        # This dataset will generate triplets (user, positive_item, negative_item).
+        dataset = BPRDataset(train_mat, self.data.get_total_items())
 
-        # Convert the user interactions to a numpy array for sampling.
-        all_items = np.arange(self.data.get_total_items())
-        # Training loop for BPR-MF
-        for epoch in range(1, n_epochs+1):
-            loss_epoch = 0.0
-            num_updates = train_mat.nnz
-            pbar = tqdm(range(num_updates), desc=f"BPR-MF Epoch {epoch}")
-            for _ in pbar:
-                # Sample a user with at least one interaction
-                u = random.choice(list(interactions.keys()))
-                pos_items = interactions[u]
-                i = random.choice(pos_items)
-                # Sample negative item j
-                j = random.choice(all_items)
-                while j in pos_items:
-                    j = random.choice(all_items)
-                # Prepare tensors
-                u_t = torch.tensor(u, dtype=torch.long, device=device)
-                i_t = torch.tensor(i, dtype=torch.long, device=device)
-                j_t = torch.tensor(j, dtype=torch.long, device=device)
-                # Forward pass
-                u_vec = user_factors(u_t)
-                i_vec = item_factors(i_t)
-                j_vec = item_factors(j_t)
-                xui = (u_vec * i_vec).sum()
-                xuj = (u_vec * j_vec).sum()
+        # Create a DataLoader to iterate over the dataset in batches.
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=False
+        )
+
+        for epoch in tqdm(range(1, n_epochs + 1), desc="BPR-MF Training", unit="epoch"):
+            epoch_loss = 0.0
+            total_triples = 0
+
+            for (u_batch, pos_batch, neg_batch) in dataloader:
+                # Move the data to the specified device (CPU or GPU).
+                u_batch = u_batch.to(device)        # shape: [B]
+                pos_batch = pos_batch.to(device)    # shape: [B]
+                neg_batch = neg_batch.to(device)    # shape: [B]
+
+                # Obtain the positive and negative item indices for the users in the batch.
+                u_vec = user_factors(u_batch)       # shape: [B, D]
+                i_vec = item_factors(pos_batch)     # shape: [B, D]
+                j_vec = item_factors(neg_batch)     # shape: [B, D]
+
+                # Forward pass (compute the scores for positive and negative items).
+                xui = (u_vec * i_vec).sum(dim=1)    # shape: [B]
+                xuj = (u_vec * j_vec).sum(dim=1)    # shape: [B]
 
                 # Compute loss using BPR loss function
                 # BPR loss is -log(sigmoid(xui - xuj))
-                loss = -torch.log(torch.sigmoid(xui - xuj) + 1e-8)
+                # We add a small constant to avoid log(0)
+                # We do the mean to have the result of the batch
+                loss = -torch.log(torch.sigmoid(xui - xuj) + 1e-8).mean()
 
                 # Backward pass and optimization
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                loss_epoch += loss.item()
 
-                pbar.set_postfix({'loss': loss_epoch / (pbar.n+1)})
+                epoch_loss += loss.item() * u_batch.size(0)
+                total_triples += u_batch.size(0)
+
+            # Log the average loss for the epoch to TensorBoard.
+            avg_loss = epoch_loss / total_triples
+            self.writer.add_scalar("BPRMF_Loss/train", avg_loss, epoch)
+            tqdm.write(f"Epoch {epoch} Loss: {avg_loss:.4f}")
 
         # Print the final loss for the last epoch.
-        print(f"Final Loss: {loss_epoch / num_updates:.4f}")
+        print(f"Final Loss: {epoch_loss / total_triples:.4f}")
 
         # Finally, we move the user and item factors to the cpu and convert them to
         # numpy arrays.
@@ -341,23 +364,39 @@ class BPRMFRecommender(Recommender):
         recommendation: Recommendation | None = None,
         n: int = 10,
     ) -> Recommendation:
+        # If no recommendation object is passed, we create a new one.
         if recommendation is None:
             recommendation = Recommendation()
+
+        # Get the candidates for the user using the strategy given.
         candidates = strategy.filter(user_id)
         u_idx = self.data.to_internal_user(user_id)
+
+        # If no candidates are found, we return the recommendation object.
         if u_idx is None:
             return recommendation
+
+        # 
         u_vec = self.user_factors[u_idx]
         mapped = [(cand, self.data.to_internal_item(cand)) for cand in candidates]
         valid = [(cand, idx) for cand, idx in mapped if idx is not None]
         if not valid:
             return recommendation
+        
+        # Unpack the valid candidates into two lists: items_list and idx_list.
         items_list, idx_list = zip(*valid)
         idx_arr = np.fromiter(idx_list, dtype=np.int64)
         scores = self.item_factors[idx_arr].dot(u_vec)
-        top_k = min(n, len(scores))
-        top_idx = np.argpartition(-scores, top_k-1)[:top_k]
+
+        # If the number of candidates is less than n, we set n to the number of candidates.
+        if len(scores) < n:
+            n = len(scores)
+        top_idx = np.argpartition(-scores, n-1)[:n]
         top_sorted = top_idx[np.argsort(-scores[top_idx])]
+
+        # Get the top n items and their corresponding scores.
         recs = [(items_list[i], float(scores[i])) for i in top_sorted]
+        # Add the recommendations to the recommendation object and return it.
         recommendation.add_recommendations(user_id, recs)
+        # Return the recommendation object.
         return recommendation
