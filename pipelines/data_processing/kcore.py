@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def apply_k_core(df, k):
     while True:
         start_shape = df.shape[0]
@@ -18,6 +19,7 @@ def apply_k_core(df, k):
 
     return df
 
+
 def main(input_file, output_file, k):
     print(f"Loading data frmo {input_file}...")
     df = pd.read_csv(input_file, sep='\t', header=None)
@@ -29,6 +31,7 @@ def main(input_file, output_file, k):
     filtered_df.to_csv(output_file, sep='\t', index=False, header=False)
 
     print(f"Completed filtering. Remaining rows: {filtered_df.shape[0]}")
+
 
 if __name__ == "__main__":
     input_filename = "data/NewYork/US_NewYork_Processed.txt"

@@ -1,0 +1,109 @@
+import itertools
+import subprocess
+
+"""
+This script runs a grid search for different recommender models.
+Complete the required parameters in the main section and run the script to execute the
+grid search for the specified model.
+"""
+
+
+# Fixed arguments
+BASE_CMD = [
+    "python", "-m", "src.main_recommend",
+    "--n_items_to_recommend", "5",
+    "--save_path", "results/recommendations/"
+]
+
+
+def run_knn_search(model: str):
+    """
+    Run grid search for KNN-based models.
+
+    Args:
+        model (str): The name of the model to run ("knn_user" or "knn_item").
+    """
+    if model not in {"knn_user", "knn_item"}:
+        raise ValueError("Model must be 'knn_user' or 'knn_item'")
+
+    PARAM_GRID = {
+        "--k": [1, 5, 10],
+        "--similarity": ["cosine", "pearson"],
+    }
+
+    print(f"\nStarting grid search for model: {model.upper()}")
+    total_runs = len(list(itertools.product(*PARAM_GRID.values())))
+
+    for i, combo in enumerate(itertools.product(*PARAM_GRID.values()), 1):
+        cmd = BASE_CMD.copy()
+        cmd.extend(["--recommender", model])
+
+        for key, value in zip(PARAM_GRID.keys(), combo):
+            cmd.extend([key, str(value)])
+
+        print(f"\nRunning combination {i}/{total_runs}:")
+        print(" ".join(cmd))
+        subprocess.run(cmd)
+
+
+def run_grid_search(model: str):
+    """
+    Run grid search with the specified model type ('mf' or 'bprmf').
+
+    Args:
+        model (str): The name of the model to run ("mf" or "bprmf").
+    """
+    # Hyperparameter grid for both models
+    PARAM_GRID = {
+        "--n_factors": [32, 64, 128],
+        "--lr": [0.01, 0.005],
+        "--reg": [0.1, 0.01],
+        "--n_epochs": [50, 100],
+        "--batch_size": [2048, 4096]
+    }
+    if model not in {"mf", "bprmf"}:
+        raise ValueError("Model must be 'mf' or 'bprmf'")
+
+    print(f"\nStarting grid search for model: {model.upper()}")
+    total_runs = len(list(itertools.product(*PARAM_GRID.values())))
+
+    for i, combo in enumerate(itertools.product(*PARAM_GRID.values()), 1):
+        cmd = BASE_CMD.copy()
+        cmd.extend(["--recommender", model])
+
+        for key, value in zip(PARAM_GRID.keys(), combo):
+            cmd.extend([key, str(value)])
+
+        print(f"\nRunning combination {i}/{total_runs}:")
+        print(" ".join(cmd))
+        subprocess.run(cmd)
+
+
+if __name__ == "__main__":
+    ######### Configuration #########
+    # Choose a model between:
+    # "popularity" "random" "knn_user" "knn_item" "mf" or "bprmf"
+    model = "mf"
+
+    # Path to the training data
+    data_path = "data/dataset/train.txt"
+    sep = "\t"
+
+    test_file = False
+    if test_file:
+        test_path = "data/dataset/test.txt"
+        BASE_CMD.append("--data_path_test")
+        BASE_CMD.append(test_path)
+    else:
+        test_size = 0.1
+        BASE_CMD.append("--test_size")
+        BASE_CMD.append(str(test_size))
+
+    # Include the parameters in the command
+    BASE_CMD.append("--data_path_train")
+    BASE_CMD.append(data_path)
+    BASE_CMD.append("--sep")
+    BASE_CMD.append(sep)
+
+    if model == "bprmf" or model == "mf":
+        run_grid_search(model)

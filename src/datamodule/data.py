@@ -253,7 +253,7 @@ class Data(AbstractData):
             ValueError: If the data is not in the expected format.
         """
         # Take only the first 4 columns of the data and rename them
-        data = data.iloc[:, :4]
+        data = data.iloc[:, :4].copy()
         data.columns = ["user", "item", "rating", "timestamp"]
 
         if train:
@@ -270,8 +270,8 @@ class Data(AbstractData):
             self._iidx_map = {i: iid for iid, i in self._iid_map.items()}
 
             # Map the user and item ids to internal ids and save them
-            data["user"] = data["user"].map(self._uid_map)
-            data["item"] = data["item"].map(self._iid_map)
+            data.loc[:, "user"] = data["user"].map(self._uid_map)
+            data.loc[:, "item"] = data["item"].map(self._iid_map)
         
         # Return the preprocessed data
         return data
@@ -332,7 +332,7 @@ class Data(AbstractData):
 
         # If we're not using the internal id, we need to map the item ids back to the original ids
         if original_id:
-            user_ratings["item"] = user_ratings["item"].map(self._iidx_map)
+            user_ratings.loc[:, "item"] = user_ratings["item"].map(self._iidx_map)
 
         # Create a dictionary with the pairs of items and ratings
         user_ratings_dict = dict(zip(user_ratings["item"], user_ratings["rating"]))
@@ -350,7 +350,7 @@ class Data(AbstractData):
 
         # If we're not using the internal id, we need to map the user ids back to the original ids
         if original_id:
-            item_ratings["user"] = item_ratings["user"].map(self._uidx_map)
+            item_ratings.loc[:, "user"] = item_ratings["user"].map(self._uidx_map)
 
         # Create a dictionary with the pairs of users and ratings
         item_ratings_dict = dict(zip(item_ratings["user"], item_ratings["rating"]))

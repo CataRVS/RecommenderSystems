@@ -276,6 +276,16 @@ def create_name(
             f"bs{batch_size}",
         ])
 
+    # Detalle extra para BPR-MF
+    elif recommender_name == "bprmf":
+        parts.extend([
+            f"f{n_factors}",
+            f"lr{str(lr).replace('.', 'p')}",
+            f"reg{str(reg).replace('.', 'p')}",
+            f"ep{n_epochs}",
+            f"bs{batch_size}",
+        ])
+
     filename = "_".join(parts) + ".csv"
     return filename
 
@@ -445,7 +455,7 @@ def main():
         type=str,
         help="Path to save the recommendations",
         required=False,
-        default="recommendations/",
+        default="results/recommendations/",
     )
     # Parse the arguments
     args = parser.parse_args()

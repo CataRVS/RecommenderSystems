@@ -52,7 +52,6 @@ class Precision(Evaluation):
         Returns:
             float: Precision score.
         """
-        # TEST 1: Implement precision evaluation
         # Load the recommendations
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -96,7 +95,6 @@ class Recall(Evaluation):
         Returns:
             float: Recall score.
         """
-        # TEST 2: Implement recall evaluation
         # Load the recommendations
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -156,7 +154,6 @@ class NDCG(Evaluation):
         Returns:
             float: NDCG score.
         """
-        # TEST 3: Implement NDCG evaluation
         # Load the recommendations
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -185,7 +182,6 @@ class NDCG(Evaluation):
 
 class EPC(Evaluation):
     """
-    DUDA 1: Que es EPC?
     Expected Popularity Complement (EPC) of the recommendations.
 
     EPC@k(u) = (1/k) Σ_{i∈L_{u,k}} (1 - pop(i)) where:
@@ -210,7 +206,6 @@ class EPC(Evaluation):
         Returns:
             float: Expected precision score.
         """
-        # TODO 4: Implement expected precision evaluation
         # Load the recommendations
         recommendations: Dict[int, List[int]] = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -274,7 +269,6 @@ class AggregateDiversity(Evaluation):
         Returns:
             float: Aggregate diversity score.
         """
-        # TEST 6: Implement aggregate diversity evaluation
         # Load the recommendations
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -315,8 +309,6 @@ class Gini(Evaluation):
         Returns:
             float: Gini coefficient score.
         """
-        # TEST 5: Implement Gini coefficient evaluation
-
         # Load the recommendations
         recommendations = self.data._load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
@@ -342,7 +334,7 @@ class Gini(Evaluation):
         total = sorted_counts.sum()
         # Calculate the Gini coefficient
         index = np.arange(1, n + 1)
-        gini = (2 * (index * sorted_counts).sum()) / (n * total) - (n + 1) / n
+        gini = ((2 * (index * sorted_counts).sum()) / (n * total)) - ((n + 1) / n)
 
         # Return the Gini coefficient
         return float(gini)

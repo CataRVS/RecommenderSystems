@@ -20,6 +20,9 @@ logs/
 # Txt files with comments
 comentarios.txt
 
+# Recommendations files
+recommendations/
+
 # Distribution / packaging
 .Python
 build/
