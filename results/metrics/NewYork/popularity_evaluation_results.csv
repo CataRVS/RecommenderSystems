@@ -1,0 +1,2 @@
+filename,recommender,strategy,config,precision,recall,ndcg,epc,gini,aggregate_diversity
+popularity_5_no_filtering.csv,popularity,no_filtering,,0.04939759036144579,0.06623461263600769,0.07415160014594954,0.774159883114172,0.0,0.006024096385542169
