@@ -78,7 +78,7 @@ class AbstractData(ABC):
     #     pass
 
     @abstractmethod
-    def get_users(self, test: bool=False) -> list:
+    def get_users(self, test: bool = False) -> list:
         """
         Get the list of users.
 
@@ -92,7 +92,7 @@ class AbstractData(ABC):
         pass
 
     @abstractmethod
-    def get_items(self, test: bool=False) -> list:
+    def get_items(self, test: bool = False) -> list:
         """
         Get the list of items.
 
@@ -221,7 +221,9 @@ class Data(AbstractData):
                 "Error parsing the file. Please check the file format and try again."
             )
 
-    def _divide_data(self, data: pd.DataFrame, test_size: float) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _divide_data(
+        self, data: pd.DataFrame, test_size: float
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Divide the data into training and testing sets.
 
@@ -238,7 +240,7 @@ class Data(AbstractData):
         test_data = data[test_mask]
         return train_data, test_data
 
-    def _preprocess(self, data: pd.DataFrame, train: bool=True) -> pd.DataFrame:
+    def _preprocess(self, data: pd.DataFrame, train: bool = True) -> pd.DataFrame:
         """
         Preprocess a data set.
 
@@ -272,7 +274,7 @@ class Data(AbstractData):
             # Map the user and item ids to internal ids and save them
             data.loc[:, "user"] = data["user"].map(self._uid_map)
             data.loc[:, "item"] = data["item"].map(self._iid_map)
-        
+
         # Return the preprocessed data
         return data
 
@@ -291,7 +293,9 @@ class Data(AbstractData):
         data = self._train["rating"].values  # Ratings
 
         # Create the sparse matrix
-        sparse_matrix = coo_matrix((data, (rows, cols)), shape=(self._total_users, self._total_items))
+        sparse_matrix = coo_matrix(
+            (data, (rows, cols)), shape=(self._total_users, self._total_items)
+        )
 
         # Convert to CSR format for efficient arithmetic and matrix-vector operations
         return sparse_matrix.tocsr()
@@ -381,8 +385,8 @@ class Data(AbstractData):
         return self._iid_map.get(orig_item_id)
 
     def get_item_interactions_indices(
-            self, orig_item_id: int
-        ) -> Tuple[np.ndarray, np.ndarray]:
+        self, orig_item_id: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Retrieve the internal user indices and their ratings for a given item.
 
@@ -403,8 +407,8 @@ class Data(AbstractData):
         return col.row, col.data
 
     def get_user_interactions_indices(
-            self, orig_user_id: int
-        ) -> Tuple[np.ndarray, np.ndarray]:
+        self, orig_user_id: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Retrieve the internal item indices and their ratings for a given user.
 

@@ -36,11 +36,11 @@ class Precision(Evaluation):
     Computes the precision of the recommendations.
     """
     def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 
@@ -79,11 +79,11 @@ class Recall(Evaluation):
     """
 
     def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 
@@ -135,14 +135,14 @@ class NDCG(Evaluation):
         Returns:
             float: DCG score.
         """
-        return sum(r / np.log2(idx+2) for idx, r in enumerate(relevance))
+        return sum(r / np.log2(idx + 2) for idx, r in enumerate(relevance))
 
     def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 
@@ -171,7 +171,7 @@ class NDCG(Evaluation):
             # Calculate DCG
             dcg = self._dcg(relevance)
             # Calculate IDCG (ideal DCG)
-            ideal_relevance = [1]*min(len(ground_truth), len(items))
+            ideal_relevance = [1] * min(len(ground_truth), len(items))
             ideal_dcg = self._dcg(ideal_relevance)
             # Calculate NDCG
             ndcgs.append(dcg / ideal_dcg if ideal_dcg > 0 else 0)
@@ -190,11 +190,11 @@ class EPC(Evaluation):
     """
 
     def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 
@@ -219,7 +219,7 @@ class EPC(Evaluation):
         # If there are no users, return 0.0
         if num_users == 0:
             return 0.0
-        
+
         # Get the total number of items and the number of items in the recommendations
         all_items = {i for lst in recommendations.values() for i in lst}
         pop_cache: Dict[int, float] = {}
@@ -253,11 +253,11 @@ class AggregateDiversity(Evaluation):
     Computes the aggregate diversity of the recommendations.
     """
     def evaluate(
-            self,
-            recommendations_path: str,
-            recommendations_sep: str = ",",
-            ignore_first_line: bool = False
-        ) -> float:
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 

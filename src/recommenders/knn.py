@@ -6,6 +6,7 @@ from src.utils.strategies import Strategy
 from typing import List, Tuple
 import numpy as np
 
+
 class UserBasedRankingRecommender(Recommender):
     """
     User-based collaborative filtering recommender system.
@@ -92,9 +93,9 @@ class UserBasedRankingRecommender(Recommender):
             sims = np.clip(sims, 0, None)
 
             # Select top-k neighbors by similarity magnitude
-            top_k_indices = np.argsort(-np.abs(sims))[: self.k] # Top-k indices
-            top_sims = sims[top_k_indices] # Top-k similarities
-            top_rats = ratings[top_k_indices] # Top-k ratings
+            top_k_indices = np.argsort(-np.abs(sims))[: self.k]  # Top-k indices
+            top_sims = sims[top_k_indices]  # Top-k similarities
+            top_rats = ratings[top_k_indices]  # Top-k ratings
 
             # Compute the votes based on the threshold
             # votes_v = 1 if r_{v,i} >= threshold else 0

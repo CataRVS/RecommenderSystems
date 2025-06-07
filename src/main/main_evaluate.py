@@ -38,8 +38,8 @@ def load_evaluation_metric(
     elif evaluation_name == "aggregate_diversity":
         evaluator = ev.AggregateDiversity(data)
     else:
-        print(f"Evaluation metric '{evaluation_name}' not found. Check the available"
-              + "metrics.")
+        print(f"Evaluation metric '{evaluation_name}' not found. Check the available "
+              "metrics.")
         exit(1)
 
     return evaluator
@@ -195,6 +195,7 @@ def main():
         ignore_first_line_recs=args.ignore_first_line_recs,
         data=data,
     )
+
 
 if __name__ == "__main__":
     main()

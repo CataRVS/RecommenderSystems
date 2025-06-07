@@ -93,7 +93,7 @@ def load_recommender(
         )
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
-              + "recommenders.")
+              "recommenders.")
         exit(1)
 
     return recommender
@@ -158,7 +158,7 @@ def load_similarity(
             similarity = sim.PearsonCorrelationItems(data)
     else:
         print(f"Similarity measure {similarity_name} not found. Check the available "
-              + "similarity measures.")
+              "similarity measures.")
         exit(1)
 
     return similarity
@@ -224,7 +224,9 @@ def generate_recommendations(
 
     # Generate recommendations
     for user in tqdm(test_users, desc="Generating recommendations"):
-        recommendations = recommender.recommend(user, strategy, recommendations, n_items_to_recommend)
+        recommendations = recommender.recommend(
+            user, strategy, recommendations, n_items_to_recommend
+        )
 
     return recommendations
 
@@ -288,6 +290,7 @@ def create_name(
 
     filename = "_".join(parts) + ".csv"
     return filename
+
 
 def main():
     """
@@ -489,7 +492,6 @@ def main():
         batch_size=args.batch_size,
         device=args.device,
     )
-
 
     # Create the name for the recommendation file
     name = create_name(
