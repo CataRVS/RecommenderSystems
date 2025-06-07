@@ -61,7 +61,7 @@ class CosineSimilarityUsers(Similarity):
 
         # Compute the cosine similarity matrix for all users
         # First, we multiply the matrix by its transpose to get the dot product of all users
-        dot_product = M.dot(M.T).toarray() # Users x Users
+        dot_product = M.dot(M.T).toarray()  # Users x Users
 
         # Then, we compute the norms of each user to normalize the dot product
         # The norms are the square root of the sum of squares of each row
@@ -196,7 +196,6 @@ class PearsonCorrelationUsers(Similarity):
         # First, we mask the ratings so that we have 1 if the rating is > 0 and 0 otherwise
         # We will use this mask to count the number of ratings for each user
         mask = (M > 0).astype(np.float32)
-        
 
         # We compute the rating mean for each user
         sums = M.sum(axis=1).A1         # Σ r_{u,i}
@@ -205,7 +204,7 @@ class PearsonCorrelationUsers(Similarity):
 
         # We transform the matrix to coo (coordinate) format to get the row and column indices
         M_coo = M.tocoo()
-        M_coo.data = M_coo.data.astype(np.float64) # Ensure data is in float64 for precision
+        M_coo.data = M_coo.data.astype(np.float64)  # Ensure data is in float64 for precision
         # We then subtract the mean from each rating to get the centered ratings
         M_coo.data -= means[M_coo.row]
         # We convert it back to csr (compressed sparse row) format to get the dot product
@@ -291,7 +290,7 @@ class PearsonCorrelationItems(Similarity):
 
         # We transform the matrix to coo (coordinate) format to get the row and column indices
         M_t_coo = M_t.tocoo()
-        M_t_coo.data = M_t_coo.data.astype(np.float64) # Ensure data is in float64 for precision
+        M_t_coo.data = M_t_coo.data.astype(np.float64)  # Ensure data is in float64 for precision
 
         # We then subtract the mean from each rating to get the centered ratings
         M_t_coo.data -= means[M_t_coo.row]
