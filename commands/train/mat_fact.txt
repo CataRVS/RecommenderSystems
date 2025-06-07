@@ -1,0 +1,8 @@
+# MovieLens 100K u1
+python -m src.main.main_recommend '--recommender' 'mf' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'results/recommendations/ml-100k/' '--n_factors' '64' '--lr' '0.001' '--reg' '0.01' '--n_epochs' '50'
+python -m src.main.main_recommend '--recommender' 'bprmf' '--data_path_train' 'data/ml-100k/u1.base' '--data_path_test' 'data/ml-100k/u1.test' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'results/recommendations/ml-100k/' '--n_factors' '64' '--lr' '0.001' '--reg' '0.01' '--n_epochs' '50'
+
+
+# Shortened_10 with no_filtering
+python -m src.main.main_recommend '--recommender' 'mf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'results/recommendations/NewYork_10/' '--strategy' 'no_filtering' '--n_factors' '64' '--lr' '0.001' '--reg' '0.01' '--n_epochs' '50'
+python -m src.main.main_recommend '--recommender' 'bprmf' '--data_path_train' 'data/NewYork/US_NewYork_Processed_Shortened_10.txt' '--test_size' '0.1' '--sep' '\t' '--n_items_to_recommend' '5' '--save_path' 'results/recommendations/NewYork_10/' '--strategy' 'no_filtering' '--n_factors' '64' '--lr' '0.001' '--reg' '0.01' '--n_epochs' '50'
