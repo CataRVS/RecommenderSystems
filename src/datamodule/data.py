@@ -190,8 +190,8 @@ class AbstractData(ABC):
         """
         pass
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def load_recs(
         path: str,
         sep: str = ",",
