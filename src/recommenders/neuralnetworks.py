@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 class NeuralNetworkRecommender(Recommender):
     """
     Neural Network Recommender System using a Multi-Layer Perceptron (MLP).
-    
+
     Attributes:
         data (Data): user-item interaction data
     """

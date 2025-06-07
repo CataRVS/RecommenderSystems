@@ -1,6 +1,7 @@
 import random
 from torch.utils.data import Dataset
 
+
 class BPRDataset(Dataset):
     """
     BPR-MF Dataset that generates triplets (user, positive_item, negative_item).
@@ -38,7 +39,7 @@ class BPRDataset(Dataset):
             int: Number of positive user-item pairs.
         """
         return len(self.interactions)
-    
+
     def __getitem__(self, idx):
         """
         Return a triplet (u, i, j) where:

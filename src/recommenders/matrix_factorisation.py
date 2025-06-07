@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -11,6 +10,7 @@ from src.datamodule.data import Data
 from src.utils.datasets import BPRDataset
 from src.utils.utils import Recommendation
 from src.utils.strategies import Strategy
+
 
 class MFRecommender(Recommender):
     """
@@ -291,7 +291,7 @@ class BPRMFRecommender(Recommender):
 
     def _train(self, user_factors, item_factors, optimizer, n_epochs, batch_size, device):
         """
-        
+        TODO: Complete the docstring.
         """
         # Get the training data as a sparse matrix in COO format to get the
         # user, item and rating tensors.
@@ -376,13 +376,12 @@ class BPRMFRecommender(Recommender):
         if u_idx is None:
             return recommendation
 
-        # 
         u_vec = self.user_factors[u_idx]
         mapped = [(cand, self.data.to_internal_item(cand)) for cand in candidates]
         valid = [(cand, idx) for cand, idx in mapped if idx is not None]
         if not valid:
             return recommendation
-        
+
         # Unpack the valid candidates into two lists: items_list and idx_list.
         items_list, idx_list = zip(*valid)
         idx_arr = np.fromiter(idx_list, dtype=np.int64)
@@ -391,7 +390,7 @@ class BPRMFRecommender(Recommender):
         # If the number of candidates is less than n, we set n to the number of candidates.
         if len(scores) < n:
             n = len(scores)
-        top_idx = np.argpartition(-scores, n-1)[:n]
+        top_idx = np.argpartition(-scores, n - 1)[:n]
         top_sorted = top_idx[np.argsort(-scores[top_idx])]
 
         # Get the top n items and their corresponding scores.
