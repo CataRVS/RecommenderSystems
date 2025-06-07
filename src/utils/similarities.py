@@ -11,6 +11,8 @@ class Similarity(ABC):
         data (Data): Data instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed similarity matrix for all users/items.
     """
+    sim_matrix: np.ndarray
+
     def __init__(self, data: Data):
         """
         Create a new Similarity instance.
@@ -19,7 +21,6 @@ class Similarity(ABC):
             data (Data): Data instance with the user-item interactions.
         """
         self.data = data
-        self.sim_matrix = None
 
     @abstractmethod
     def compute_similarity(self, elemU: int, elemV: int) -> float:
@@ -57,7 +58,7 @@ class CosineSimilarityUsers(Similarity):
         super().__init__(data)
 
         # To hurry up the computation, we will use the sparse matrix representation
-        M = data.get_train_sparse_matrix()
+        M = data._get_train_sparse_matrix()
 
         # Compute the cosine similarity matrix for all users
         # First, we multiply the matrix by its transpose to get the dot product of all users
@@ -125,7 +126,7 @@ class CosineSimilarityItems(Similarity):
         super().__init__(data)
 
         # To hurry up the computation, we will use the sparse matrix representation transposed
-        M_t = data.get_train_sparse_matrix().T
+        M_t = data._get_train_sparse_matrix().T
 
         # Compute the cosine similarity matrix for all items
         # First, we multiply the matrix transpose by the matrix to get the dot product
@@ -190,7 +191,7 @@ class PearsonCorrelationUsers(Similarity):
         super().__init__(data)
 
         # To hurry up the computation, we will use the sparse matrix representation
-        M = data.get_train_sparse_matrix()
+        M = data._get_train_sparse_matrix()
 
         # Compute the Pearson correlation similarity matrix for all users
         # First, we mask the ratings so that we have 1 if the rating is > 0 and 0 otherwise
@@ -277,7 +278,7 @@ class PearsonCorrelationItems(Similarity):
         super().__init__(data)
 
         # To hurry up the computation, we will use the sparse matrix representation transposed
-        M_t = data.get_train_sparse_matrix().T
+        M_t = data._get_train_sparse_matrix().T
 
         # Compute the Pearson correlation similarity matrix for all items
         # First, we mask the ratings so that we have 1 if the rating is > 0 and 0 otherwise
