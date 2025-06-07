@@ -1,5 +1,6 @@
 import argparse
 import os
+import pandas as pd
 import src.recommenders.knn as knn
 import src.recommenders.matrix_factorisation as mf
 import src.recommenders.basic_recommenders as rec
@@ -467,14 +468,21 @@ def main():
     set_seed(args.seed)
 
     # Load the data
-    data = Data(
-        args.data_path_train,
-        args.data_path_test,
-        args.sep,
-        args.test_size,
-        args.ignore_first_line,
-        args.col_names,
-    )
+    try:
+        data = Data(
+            args.data_path_train,
+            args.data_path_test,
+            args.sep,
+            args.test_size,
+            args.ignore_first_line,
+            args.col_names,
+        )
+    except FileNotFoundError as e:
+        print(e)
+        exit(1)
+    except pd.errors.ParserError as e:
+        print(e)
+        exit(1)
 
     # Generate recommendations
     recommendations = generate_recommendations(

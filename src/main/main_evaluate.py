@@ -1,4 +1,5 @@
 import argparse
+import pandas as pd
 import src.evaluation.evaluation as ev
 from src.datamodule.data import Data
 from src.utils.utils import set_seed
@@ -178,14 +179,21 @@ def main():
     set_seed(args.seed)
 
     # Load the data
-    data = Data(
-        data_path_train=args.data_path_train,
-        data_path_test=args.data_path_test,
-        sep=args.sep_data,
-        test_size=args.test_size,
-        ignore_first_line=args.ignore_first_line_data,
-        col_names=args.col_names,
-    )
+    try:
+        data = Data(
+            data_path_train=args.data_path_train,
+            data_path_test=args.data_path_test,
+            sep=args.sep_data,
+            test_size=args.test_size,
+            ignore_first_line=args.ignore_first_line_data,
+            col_names=args.col_names,
+        )
+    except FileNotFoundError as e:
+        print(e)
+        exit(1)
+    except pd.errors.ParserError as e:
+        print(e)
+        exit(1)
 
     # Evaluate the recommendations
     evaluate_recommendations(
