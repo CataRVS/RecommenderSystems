@@ -10,7 +10,7 @@ grid search for the specified model.
 
 # Fixed arguments
 BASE_CMD = [
-    "python", "-m", "src.main_recommend",
+    "python", "-m", "src.main.main_recommend",
     "--n_items_to_recommend", "5",
     "--save_path", "results/recommendations/"
 ]
@@ -55,14 +55,17 @@ def run_grid_search(model: str):
     """
     # Hyperparameter grid for both models
     PARAM_GRID = {
-        "--n_factors": [32, 64, 128],
+        # "--n_factors": [32, 64, 128],
+        # "--lr": [0.01, 0.005],
+        # "--reg": [0.1, 0.01],
+        # "--n_epochs": [50, 100],
+        # "--batch_size": [2048, 4096]
+        "--n_factors": [16],
         "--lr": [0.01, 0.005],
         "--reg": [0.1, 0.01],
-        "--n_epochs": [50, 100],
-        "--batch_size": [2048, 4096]
+        "--n_epochs": [50],
+        "--batch_size": [4096]
     }
-    if model not in {"mf", "bprmf"}:
-        raise ValueError("Model must be 'mf' or 'bprmf'")
 
     print(f"\nStarting grid search for model: {model.upper()}")
     total_runs = len(list(itertools.product(*PARAM_GRID.values())))
@@ -80,7 +83,7 @@ def run_grid_search(model: str):
 
 
 if __name__ == "__main__":
-    ######### Configuration #########
+    ########## CONFIGURATION ##########
     # Choose a model between:
     # "popularity" "random" "knn_user" "knn_item" "mf" or "bprmf"
     model = "mf"
@@ -88,10 +91,11 @@ if __name__ == "__main__":
     # Path to the training data
     data_path = "data/dataset/train.txt"
     sep = "\t"
+    data_path = "data/ml-100k/u1.base"
 
-    test_file = False
+    test_file = True
     if test_file:
-        test_path = "data/dataset/test.txt"
+        test_path = "data/ml-100k/u1.base"
         BASE_CMD.append("--data_path_test")
         BASE_CMD.append(test_path)
     else:
@@ -107,3 +111,15 @@ if __name__ == "__main__":
 
     if model == "bprmf" or model == "mf":
         run_grid_search(model)
+    elif model == "knn_user" or model == "knn_item":
+        run_knn_search(model)
+    elif model == "popularity" or model == "random":
+        # For popularity and random, no grid search is needed
+        BASE_CMD.append("--recommender")
+        BASE_CMD.append(model)
+        print(f"\nRunning {model.upper()} recommender:")
+        print(" ".join(BASE_CMD))
+        subprocess.run(BASE_CMD)
+    else:
+        print(f"Unknown model: {model}. Please choose from 'popularity', 'random',"
+              "'knn_user', 'knn_item', 'mf', or 'bprmf'.")
