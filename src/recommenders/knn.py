@@ -7,13 +7,9 @@ from typing import List, Tuple
 import numpy as np
 
 
-class UserBasedRankingRecommender(Recommender):
+class KNNUserBasedRecommender(Recommender):
     """
-    User-based collaborative filtering recommender system.
-
-    Instead of predicting a continuous rating, this recommender computes for each
-    candidate item a score equal to the weighted sum of neighbors who rated the item
-    at or above a threshold.
+    KNN user-based collaborative filtering recommender system.
 
     Attributes:
         data (Data): Data instance with the user-item interactions.
@@ -29,7 +25,7 @@ class UserBasedRankingRecommender(Recommender):
         threshold: float = 4.0
     ) -> None:
         """
-        Create a new UserBasedRatingPredictionRecommender instance.
+        Create a new KNNUserBasedRecommender instance.
 
         Parameters:
             data (Data): Data instance with the user-item interactions.
@@ -55,25 +51,11 @@ class UserBasedRankingRecommender(Recommender):
         recommendation: Recommendation = Recommendation(),
         n: int = 10
     ) -> Recommendation:
-        """
-        Recommend items to the user using user-based collaborative filtering.
+        # For each candidate item i:
+        #   1. Find the k most similar users to user_id who have rated i
+        #   2. Let votes_v = 1 if r_{v,i} >= threshold else 0
+        #   3. score(i) = sum_{v in N_k} (w_{u,v} * votes_v)
 
-        For each candidate item i:
-          1. Find the k most similar users to user_id who have rated i
-          2. Let votes_v = 1 if r_{v,i} >= threshold else 0
-          3. score(i) = sum_{v in N_k} (w_{u,v} * votes_v)
-
-        Parameters:
-            user_id (int): Original user ID.
-            strategy (Strategy): Recommendation strategy.
-            recommendation (Recommendation): Recommendation instance to add the
-                recommendations to.
-            n (int): Number of items to recommend.
-
-        Returns:
-            Recommendation: Recommendation instance with the top-n recommendations for
-                the user.
-        """
         # Filter the candidates based on the strategy
         candidates: List[int] = strategy.filter(user_id)
 
@@ -121,12 +103,9 @@ class UserBasedRankingRecommender(Recommender):
         return recommendation
 
 
-class ItemBasedRecommendationRecommender(Recommender):
+class KNNItemBasedRecommender(Recommender):
     """
-    Item-based collaborative filtering recommender system."
-    This recommender predicts the rating of an item for a user based on the ratings
-    given by similar items. It uses a similarity measure to find the most similar
-    items and then computes a weighted average of their ratings for the item.
+    KNN item-based collaborative filtering recommender system.
 
     Attributes:
         data (Data): Data instance with the user-item interactions.
@@ -137,7 +116,7 @@ class ItemBasedRecommendationRecommender(Recommender):
         self, data: Data, k: int = 10, similarity_measure: Similarity | None = None
     ) -> None:
         """
-        Create a new ItemBasedRecommendationRecommender instance.
+        Create a new KNNItemBasedRecommender instance.
 
         Parameters:
             data (Data): Data instance with the user-item interactions.
@@ -161,20 +140,6 @@ class ItemBasedRecommendationRecommender(Recommender):
         recommendation: Recommendation = Recommendation(),
         n: int = 10
     ) -> Recommendation:
-        """
-        Recommend items to the user using item-based collaborative filtering.
-
-        Parameters:
-            user_id (int): Original user ID.
-            strategy (Strategy): Recommendation strategy.
-            recommendation (Recommendation): Recommendation instance to add the
-                recommendations to.
-            n (int): Number of items to recommend.
-
-        Returns:
-            Recommendation: Recommendation instance with the top-n recommendations for
-                the user.
-        """
         # Filter the candidates based on the strategy
         candidates: List[int] = strategy.filter(user_id)
         predictions: List[Tuple[int, float]] = []

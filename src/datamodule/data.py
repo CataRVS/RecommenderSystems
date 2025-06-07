@@ -60,23 +60,6 @@ class AbstractData(ABC):
         """
         pass
 
-    # @abstractmethod
-    # def get_user_ratings(self, user_id: int, original_id: bool = True):
-    #     """
-    #     Get the items rated by the user.
-
-    #     Parameters:
-    #         user_id (int): User id.
-    #         original_id (bool): Whether the user id is the original or the internal id.
-
-    #     Raises:
-    #         KeyError: If the user id is not found.
-
-    #     Returns:
-    #         Items rated by the user.
-    #     """
-    #     pass
-
     @abstractmethod
     def get_users(self, test: bool = False) -> list:
         """
@@ -106,6 +89,16 @@ class AbstractData(ABC):
         pass
 
     @abstractmethod
+    def get_interactions(self) -> tuple:
+        """
+        Get the user-item interactions as a tuple of numpy arrays.
+
+        Returns:
+            tuple: User indices, item indices, and ratings.
+        """
+        pass
+
+    @abstractmethod
     def get_interaction_from_user(self, user_id: int, original_id: bool = True) -> dict:
         """
         Get the dictionary with the pairs of items and ratings for the user.
@@ -130,6 +123,90 @@ class AbstractData(ABC):
 
         Returns:
             dict: Dictionary with the pairs of users and ratings for the item.
+        """
+        pass
+
+    @abstractmethod
+    def to_internal_user(self, orig_user_id: int) -> int:
+        """
+        Convert an external user ID to its internal index.
+
+        Parameters:
+            orig_user_id (int): Original user ID.
+
+        Returns:
+            int: Internal user index or None if not found.
+        """
+        pass
+
+    @abstractmethod
+    def to_internal_item(self, orig_item_id: int) -> int:
+        """
+        Convert an external item ID to its internal index.
+
+        Parameters:
+            orig_item_id (int): Original item ID.
+
+        Returns:
+            int: Internal item index or None if not found.
+        """
+        pass
+
+    @abstractmethod
+    def get_item_interactions_indices(self, orig_item_id: int) -> tuple:
+        """
+        Retrieve the internal user indices and their ratings for a given item.
+
+        Parameters:
+            orig_item_id (int): Original item ID.
+
+        Returns:
+            tuple: Arrays of user indices and corresponding ratings.
+        """
+
+    @abstractmethod
+    def get_user_interactions_indices(self, orig_user_id: int) -> tuple:
+        """
+        Retrieve the internal item indices and their ratings for a given user.
+
+        Parameters:
+            orig_user_id (int): Original user ID.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: Arrays of item indices and corresponding ratings.
+        """
+        pass
+
+    @abstractmethod
+    def get_test_interactions(self, user_id: int) -> dict:
+        """
+        Return the test-set interactions for a given user.
+
+        Parameters:
+            user_id (int): External user ID.
+
+        Returns:
+            dict[int, float]: Mapping item_id → rating from the test split.
+        """
+        pass
+
+    @abstractmethod
+    @staticmethod
+    def load_recs(
+        path: str,
+        sep: str = ",",
+        ignore_first_line: bool = False,
+    ) -> dict:
+        """
+        Load the recommendations from a CSV file.
+
+        Parameters:
+            path (str): Path to the CSV file.
+            sep (str): Separator used in the CSV file.
+            ignore_first_line (bool): Whether to ignore the first line of the CSV file.
+
+        Returns:
+            dict: Dictionary with user IDs as keys and lists of recommended items as values.
         """
         pass
 
@@ -168,6 +245,7 @@ class Data(AbstractData):
 
         Raises:
             FileNotFoundError: If the dataset is not found.
+            pd.errors.ParserError: If there is an error parsing the dataset.
         """
         # Initialize attributes
         self._total_users: int = 0
@@ -278,12 +356,12 @@ class Data(AbstractData):
         # Return the preprocessed data
         return data
 
-    def get_train_sparse_matrix(self):
+    def _get_train_sparse_matrix(self):
         """
         Create a sparse matrix from the train data with users as rows and items as columns.
 
         Returns:
-            scipy.sparse.csr_matrix: Sparse matrix.
+            scipy.sparse.csr_array: Sparse matrix.
         """
         # Create a sparse matrix from the data with users as rows and items as columns
 
@@ -324,6 +402,12 @@ class Data(AbstractData):
             return list(self._test["item"].unique())
         return list(self._iid_map.keys())
 
+    def get_interactions(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        train_coo = self._get_train_sparse_matrix().tocoo()
+
+        # Convert rows and columns to numpy arrays
+        return (train_coo.row, train_coo.col, train_coo.data)
+
     def get_interaction_from_user(self, user_id: int, original_id: bool = True,) -> dict:
         # Get the internal user id if the original id is provided
         if original_id:
@@ -361,83 +445,34 @@ class Data(AbstractData):
         return item_ratings_dict
 
     def to_internal_user(self, orig_user_id: int) -> int:
-        """
-        Convert an external user ID to its internal index.
-
-        Parameters:
-            orig_user_id (int): Original user ID.
-
-        Returns:
-            int: Internal user index or None if not found.
-        """
         return self._uid_map.get(orig_user_id)
 
     def to_internal_item(self, orig_item_id: int) -> int:
-        """
-        Convert an external item ID to its internal index.
-
-        Parameters:
-            orig_item_id (int): Original item ID.
-
-        Returns:
-            int: Internal item index or None if not found.
-        """
         return self._iid_map.get(orig_item_id)
 
-    def get_item_interactions_indices(
-        self, orig_item_id: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Retrieve the internal user indices and their ratings for a given item.
-
-        Parameters:
-            orig_item_id (int): Original item ID.
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Arrays of user indices and corresponding ratings.
-        """
+    def get_item_interactions_indices(self, orig_item_id: int) -> Tuple[np.ndarray, np.ndarray]:
         # Get the internal item id
         item_idx = self.to_internal_item(orig_item_id)
         # If the item id is not found, return empty arrays
         if item_idx is None:
             return np.array([], dtype=int), np.array([], dtype=float)
         # Get the user indices and ratings for the item
-        col = self.get_train_sparse_matrix()[:, item_idx].tocoo()
+        col = self._get_train_sparse_matrix()[:, item_idx].tocoo()
         # Return the user indices and ratings
         return col.row, col.data
 
-    def get_user_interactions_indices(
-        self, orig_user_id: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Retrieve the internal item indices and their ratings for a given user.
-
-        Parameters:
-            orig_user_id (int): Original user ID.
-
-        Returns:
-            Tuple[np.ndarray, np.ndarray]: Arrays of item indices and corresponding ratings.
-        """
+    def get_user_interactions_indices(self, orig_user_id: int) -> Tuple[np.ndarray, np.ndarray]:
         # Get the internal user id
         user_idx = self.to_internal_user(orig_user_id)
         # If the user id is not found, return empty arrays
         if user_idx is None:
             return np.array([], dtype=int), np.array([], dtype=float)
         # Get the item indices and ratings for the user
-        row = self.get_train_sparse_matrix().getrow(user_idx).tocoo()
+        row = self._get_train_sparse_matrix().getrow(user_idx).tocoo()
         # Return the item indices and ratings
         return row.col, row.data
 
     def get_test_interactions(self, user_id: int) -> dict:
-        """
-        Return the test-set interactions for a given user.
-
-        Parameters:
-            user_id (int): External user ID.
-
-        Returns:
-            dict[int, float]: Mapping item_id → rating from the test split.
-        """
         # Get the test set
         df = self._test
         # Select only rows for this external user
@@ -446,22 +481,11 @@ class Data(AbstractData):
         return dict(zip(user_df["item"], user_df["rating"]))
 
     @staticmethod
-    def _load_recs(
+    def load_recs(
         path: str,
         sep: str = ",",
         ignore_first_line: bool = False,
     ) -> dict:
-        """
-        Load the recommendations from a CSV file.
-
-        Parameters:
-            path (str): Path to the CSV file.
-            sep (str): Separator used in the CSV file.
-            ignore_first_line (bool): Whether to ignore the first line of the CSV file.
-
-        Returns:
-            dict: Dictionary with user IDs as keys and lists of recommended items as values.
-        """
         # Read the csv file and return the recommendations in a dictionary
         # returns {user_id: [item1, item2, …]}
         df = pd.read_csv(

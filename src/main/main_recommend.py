@@ -18,7 +18,7 @@ def load_recommender(
     data: Data,
     k: int = 5,
     threshold: float = 1.0,
-    similarity_measure: str | None = None,
+    similarity_measure: str = "pearson",
     n_factors: int = 20,
     lr: float = 0.01,
     reg: float = 0.1,
@@ -41,19 +41,16 @@ def load_recommender(
         data (Data): Data instance with the user-item interactions.
         k (int): Number of neighbors to consider for KNN recommenders.
         threshold (float): Threshold for KNN recommenders.
-        similarity_measure (Similarity | None): Similarity measure to use for KNN recommenders.
+        similarity_measure (str | None): Similarity measure to use for KNN recommenders.
         n_factors (int): Number of latent factors for matrix factorization.
         lr (float): Learning rate for matrix factorization.
         reg (float): Regularization strength for matrix factorization.
         n_epochs (int): Number of epochs for matrix factorization.
-        batch_size (int): Mini-batch size for matrix factorization.
+        batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
 
     Returns:
         Recommender: Instance of the specified recommender system.
-
-    Raises:
-        ValueError: If the recommender is not found.
     """
     # Load the recommender based on the specified name
     if recommender_name == "popularity":
@@ -63,13 +60,13 @@ def load_recommender(
     elif recommender_name == "knn_user":
         if similarity_measure:
             similarity_measure = load_similarity(similarity_measure, data, "user")
-        recommender = knn.UserBasedRankingRecommender(
+        recommender = knn.KNNUserBasedRecommender(
             data, k=k, similarity_measure=similarity_measure, threshold=threshold
         )
     elif recommender_name == "knn_item":
         if similarity_measure:
             similarity_measure = load_similarity(similarity_measure, data, "item")
-        recommender = knn.ItemBasedRecommendationRecommender(
+        recommender = knn.KNNItemBasedRecommender(
             data, k=k, similarity_measure=similarity_measure
         )
     elif recommender_name == "mf":
@@ -113,9 +110,6 @@ def load_strategy(strategy_name: str, data: Data) -> Strategy:
 
     Returns:
         Strategy: Instance of the specified recommendation strategy.
-
-    Raises:
-        ValueError: If the strategy is not found.
     """
     # Load the strategy based on the specified name
     if strategy_name == "exclude_seen":
@@ -129,9 +123,7 @@ def load_strategy(strategy_name: str, data: Data) -> Strategy:
     return strategy
 
 
-def load_similarity(
-    similarity_name: str, data: Data, mode: str
-) -> Similarity:
+def load_similarity(similarity_name: str, data: Data, mode: str) -> Similarity:
     """
     Load the specified similarity measure. Available measures are:
     - cosine: Cosine similarity.
@@ -185,10 +177,18 @@ def generate_recommendations(
 
     Parameters:
         recommender_name (str): Name of the recommender to use.
-        n_items_to_recommend (int): Number of recommendations to generate.
-        strategy_name (str): Recommendation strategy to use.
+        n_items_to_recommend (int): Number of recommendations to generate for each user.
+        strategy_name (str): Name of the recommendation strategy to use.
         data (Data): Data instance with the user-item interactions.
         k (int): Number of neighbors to consider for KNN recommenders.
+        threshold (float): Threshold for KNN recommenders.
+        similarity (str): Similarity measure to use for KNN recommenders.
+        n_factors (int): Number of latent factors for matrix factorization.
+        lr (float): Learning rate for matrix factorization.
+        reg (float): Regularization strength for matrix factorization.
+        n_epochs (int): Number of epochs for matrix factorization.
+        batch_size (int): Batch size for matrix factorization.
+        device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
 
     Returns:
         Recommendation: Instance with the top-k recommendations for the user.
@@ -236,8 +236,8 @@ def create_name(
     recommender_name: str,
     n_items_to_recommend: int,
     strategy_name: str,
-    k: int = 5,
-    similarity_name: str = "pearson",
+    k: int | None = None,
+    similarity_name: str | None = None,
     n_factors: int | None = None,
     lr: float | None = None,
     reg: float | None = None,
@@ -252,9 +252,9 @@ def create_name(
         recommender_name (str): Name of the recommender used.
         n_items_to_recommend (int): Number of recommendations generated.
         strategy_name (str): Name of the recommendation strategy used.
-        k (int): Number of neighbors for KNN recommenders.
+        k (int): Number of neighbors considered for KNN recommenders.
         similarity_name (str): Similarity measure used for KNN recommenders.
-        n_factors (int | None): Number of factors for matrix factorization.
+        n_factors (int | None): Number of latent factors for matrix factorization.
         lr (float | None): Learning rate for matrix factorization.
         reg (float | None): Regularization strength for matrix factorization.
         n_epochs (int | None): Number of epochs for matrix factorization.

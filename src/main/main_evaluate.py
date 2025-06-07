@@ -5,10 +5,7 @@ from src.datamodule.data import Data
 from src.utils.utils import set_seed
 
 
-def load_evaluation_metric(
-        evaluation_name: str,
-        data: Data,
-) -> ev.Evaluation:
+def load_evaluation_metric(evaluation_name: str, data: Data) -> ev.Evaluation:
     """
     Load the evaluation metric based on the provided name. Available metrics are:
     - precision
@@ -17,6 +14,7 @@ def load_evaluation_metric(
     - epc
     - gini
     - aggregate_diversity
+    - UPDATE 4: Add more metrics if needed.
 
     Parameters:
         evaluation_name (str): Name of the evaluation metric.
@@ -52,7 +50,7 @@ def evaluate_recommendations(
     recommendations_sep: str,
     ignore_first_line_recs: bool,
     data: Data
-) -> None:
+):
     """
     Evaluate the recommendations using the specified evaluation metric.
 
@@ -79,8 +77,8 @@ def evaluate_recommendations(
 
 def main():
     """
-    Main function for the evaluation script. Parses command line
-    arguments and evaluates the recommendations.
+    Main function for the evaluation script. Parses command line arguments and
+    evaluates the recommendations.
     """
     parser = argparse.ArgumentParser(
         description="Evaluate the recommendations using different metrics."
@@ -122,7 +120,6 @@ def main():
         required=False,
         default=0.2,
     )
-    # FIXME 1: Ver si lo dejo y añado para poder usar argumentos o si lo quito
     # Add the recomendations separator argument
     parser.add_argument(
         "--sep_recs",
@@ -139,7 +136,6 @@ def main():
         required=False,
         default="\t",
     )
-    # FIXME 2: Ver si lo dejo y añado para poder usar argumentos o si lo quito
     # Add the ignore first line argument in the recommendations file
     parser.add_argument(
         "--ignore_first_line_recs",

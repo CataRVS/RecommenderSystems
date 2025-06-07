@@ -52,12 +52,13 @@ class PopularityRecommender(Recommender):
     Recommends the most popular items (most consumed).
 
     Attributes:
+        data (Data): Data instance with the user-item interactions.
         popularity_scores (dict): Popularity score (count) of each item.
     """
 
     def __init__(self, data: Data):
         """
-        Create a new PopularityRecommender instance.
+        Create a new PopularityRecommender instance and compute the popularity scores.
 
         Parameters:
             data (Data): Data instance with the user-item interactions.
@@ -96,20 +97,6 @@ class PopularityRecommender(Recommender):
         recommendation: Recommendation = Recommendation(),
         n: int = 10,
     ) -> Recommendation:
-        """
-        Recommend the most popular items to the user.
-
-        Parameters:
-            user_id (int): Original user ID.
-            strategy (Strategy): Recommendation strategy.
-            recommendation (Recommendation): Recommendation instance to add the
-                recommendations to.
-            n (int): Number of items to recommend.
-
-        Returns:
-            Recommendation: Recommendation instance with the top-n recommendations for
-                the user.
-        """
         # Filter the candidates based on the strategy
         filtered_candidates = strategy.filter(user_id)
 
@@ -136,6 +123,9 @@ class PopularityRecommender(Recommender):
 class RandomRecommender(Recommender):
     """
     Recommends random items to users.
+
+    Attributes:
+        data (Data): Data instance with the user-item interactions.
     """
 
     def recommend(
@@ -145,20 +135,6 @@ class RandomRecommender(Recommender):
         recommendation: Recommendation = Recommendation(),
         n: int = 10,
     ) -> Recommendation:
-        """
-        Recommend random items to the user.
-
-        Parameters:
-            user_id (int): Original user ID.
-            strategy (Strategy): Recommendation strategy.
-            recommendation (Recommendation): Recommendation instance to add the
-                recommendations to.
-            n (int): Number of items to recommend.
-
-        Returns:
-            Recommendation: Recommendation instance with the top-n recommendations for
-                the user.
-        """
         # Filter the candidates based on the strategy
         filtered_candidates = strategy.filter(user_id)
 

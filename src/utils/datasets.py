@@ -1,5 +1,6 @@
 import random
 from torch.utils.data import Dataset
+from src.datamodule.data import Data
 
 
 class BPRDataset(Dataset):
@@ -11,20 +12,19 @@ class BPRDataset(Dataset):
         user_pos (dict): Mapping from user to set of positive items.
         n_items (int): Total number of items (for negative sampling).
     """
-    def __init__(self, train_coo, n_items):
+    def __init__(self, data: Data):
         """
         Initialize the BPRDataset.
 
         Parameters:
-            train_coo (scipy.sparse.coo_matrix): Training sparse matrix in COO format
-                containing internal user indices (row), internal item indices (col), and ratings.
-            n_items (int): Total number of items in the dataset.
+            data (Data): Data instance containing user-item interactions.
         """
         # Store the number of items
-        self.n_items = n_items
+        self.n_items = data.get_total_items()
+        users, items, _ = data.get_interactions()
 
-        # Convert rows and columns to a list of (user, item) tuples
-        self.interactions = list(zip(train_coo.row, train_coo.col))
+        # Create a list of positive interactions (user, item)
+        self.interactions = list(zip(users, items))
 
         # Build a dictionary for quick access to positive items per user
         self.user_pos = {}

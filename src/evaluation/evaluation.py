@@ -18,12 +18,19 @@ class Evaluation(ABC):
         self.data = data
 
     @abstractmethod
-    def evaluate(self, recommendations_path: str) -> float:
+    def evaluate(
+        self,
+        recommendations_path: str,
+        recommendations_sep: str = ",",
+        ignore_first_line: bool = False
+    ) -> float:
         """
         Evaluate the recommendations.
 
         Parameters:
             recommendations_path (str): Path to the recommendations file.
+            recommendations_sep (str): Separator used in the recommendations file.
+            ignore_first_line (bool): Whether to ignore the first line of the recommendations file.
 
         Returns:
             float: Evaluation score.
@@ -53,7 +60,7 @@ class Precision(Evaluation):
             float: Precision score.
         """
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
 
@@ -77,7 +84,6 @@ class Recall(Evaluation):
     """
     Computes the recall of the recommendations.
     """
-
     def evaluate(
         self,
         recommendations_path: str,
@@ -96,7 +102,7 @@ class Recall(Evaluation):
             float: Recall score.
         """
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
 
@@ -155,7 +161,7 @@ class NDCG(Evaluation):
             float: NDCG score.
         """
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
 
@@ -182,13 +188,8 @@ class NDCG(Evaluation):
 
 class EPC(Evaluation):
     """
-    Expected Popularity Complement (EPC) of the recommendations.
-
-    EPC@k(u) = (1/k) Σ_{i∈L_{u,k}} (1 - pop(i)) where:
-    - L_{u,k} is the list of k recommended items for user u and
-    - pop(i) = |UsersWhoConsumed(i)| / |U|.
+    Computes the Expected Popularity Complement (EPC) of the recommendations.
     """
-
     def evaluate(
         self,
         recommendations_path: str,
@@ -204,10 +205,10 @@ class EPC(Evaluation):
             ignore_first_line (bool): Whether to ignore the first line of the recommendations file.
 
         Returns:
-            float: Expected precision score.
+            float: EPC score.
         """
         # Load the recommendations
-        recommendations: Dict[int, List[int]] = self.data._load_recs(
+        recommendations: Dict[int, List[int]] = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
         # If there are no recommendations, return 0.0
@@ -270,7 +271,7 @@ class AggregateDiversity(Evaluation):
             float: Aggregate diversity score.
         """
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
 
@@ -310,7 +311,7 @@ class Gini(Evaluation):
             float: Gini coefficient score.
         """
         # Load the recommendations
-        recommendations = self.data._load_recs(
+        recommendations = self.data.load_recs(
             recommendations_path, recommendations_sep, ignore_first_line
         )
         # Transform the recommendations into a list of items

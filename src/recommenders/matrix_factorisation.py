@@ -14,23 +14,13 @@ from src.utils.strategies import Strategy
 
 class MFRecommender(Recommender):
     """
-    Simple Matrix Factorization Recommender using SGD to minimize squared error.
-
-    This implementation uses a user-item matrix factorization approach.
-    It learns latent factors for users and items, and uses these factors to predict ratings.
-    The model is trained using stochastic gradient descent (SGD) to minimize the squared error
-    between the predicted ratings and the actual ratings in the training data.
+    Matrix Factorization Recommender: A recommender system based on matrix factorization.
 
     Attributes:
         data (Data): The dataset containing user-item interactions.
-        n_users (int): Number of users in the dataset.
-        n_items (int): Number of items in the dataset.
-        n_factors (int): Number of latent factors for users and items.
-        lr (float): Learning rate for SGD.
-        reg (float): Regularization parameter to prevent overfitting.
-        n_epochs (int): Number of epochs for training.
-        user_factors (np.ndarray): Latent factors for users.
-        item_factors (np.ndarray): Latent factors for items.
+        writer (SummaryWriter): TensorBoard writer for logging training metrics.
+        user_factors (np.ndarray): Learned user latent factors after training.
+        item_factors (np.ndarray): Learned item latent factors after training.
     """
     def __init__(
         self,
@@ -43,6 +33,19 @@ class MFRecommender(Recommender):
         device: str | None = None,
         log_dir: str = "runs/mf_recommender",
     ):
+        """
+        Initialize the Matrix Factorization Recommender and train the model.
+
+        Parameters:
+            data (Data): The dataset containing user-item interactions.
+            embedding_dim (int): The dimensionality of the user and item embeddings.
+            lr (float): Learning rate for the optimizer.
+            weight_decay (float): Weight decay for the optimizer.
+            n_epochs (int): Number of epochs to train the model.
+            batch_size (int): Size of the batches for training.
+            device (str): Device to run the model on (CPU or GPU).
+            log_dir (str): Directory for TensorBoard logs.
+        """
         super().__init__(data)
         n_users: int = data.get_total_users()
         n_items: int = data.get_total_items()
@@ -100,16 +103,28 @@ class MFRecommender(Recommender):
         num_epochs: int,
         batch_size: int,
         device: torch.device,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
+        Train the matrix factorization model using stochastic gradient descent (SGD).
 
+        Parameters:
+            user_factors (nn.Embedding): User latent factors.
+            item_factors (nn.Embedding): Item latent factors.
+            optimizer (torch.optim.Optimizer): Optimizer for updating the model parameters.
+            criterion (nn.Module): Loss function to minimize.
+            num_epochs (int): Number of epochs to train the model.
+            batch_size (int): Size of the batches for training.
+            device (torch.device): Device to run the model on (CPU or GPU).
+
+        Returns:
+            tuple: User and item latent factors as numpy arrays after training.
         """
         # Get the training data as a sparse matrix in COO format to get the
         # user, item and rating tensors.
-        train_mat = self.data.get_train_sparse_matrix().tocoo()
-        users_t = torch.as_tensor(train_mat.row, dtype=torch.long)
-        items_t = torch.as_tensor(train_mat.col, dtype=torch.long)
-        ratings_t = torch.as_tensor(train_mat.data, dtype=torch.float32)
+        users, items, ratings = self.data.get_interactions()
+        users_t = torch.as_tensor(users, dtype=torch.long)
+        items_t = torch.as_tensor(items, dtype=torch.long)
+        ratings_t = torch.as_tensor(ratings, dtype=torch.float32)
 
         # Create a TensorDataset and DataLoader to handle the training data.
         dataset = TensorDataset(users_t, items_t, ratings_t)
@@ -234,6 +249,12 @@ class MFRecommender(Recommender):
 class BPRMFRecommender(Recommender):
     """
     BPR-MF Recommender: Matrix Factorization optimized with Bayesian Personalized Ranking.
+
+    Attributes:
+        data (Data): The dataset containing user-item interactions.
+        writer (SummaryWriter): TensorBoard writer for logging training metrics.
+        user_factors (np.ndarray): Learned user latent factors after training.
+        item_factors (np.ndarray): Learned item latent factors after training.
     """
     def __init__(
         self,
@@ -246,6 +267,19 @@ class BPRMFRecommender(Recommender):
         device: str | None = None,
         log_dir: str = "runs/bprmf_recommender",
     ):
+        """
+        Initialize the BPR-MF Recommender and train the model.
+
+        Parameters:
+            data (Data): The dataset containing user-item interactions.
+            embedding_dim (int): The dimensionality of the user and item embeddings.
+            lr (float): Learning rate for the optimizer.
+            weight_decay (float): Weight decay for the optimizer.
+            n_epochs (int): Number of epochs to train the model.
+            batch_size (int): Size of the batches for training.
+            device (str): Device to run the model on (CPU or GPU).
+            log_dir (str): Directory for TensorBoard logs.
+        """
         super().__init__(data)
         n_users = data.get_total_users()
         n_items = data.get_total_items()
@@ -289,17 +323,33 @@ class BPRMFRecommender(Recommender):
         # Close the TensorBoard writer.
         self.writer.close()
 
-    def _train(self, user_factors, item_factors, optimizer, n_epochs, batch_size, device):
+    def _train(
+        self,
+        user_factors: nn.Embedding,
+        item_factors: nn.Embedding,
+        optimizer: torch.optim.Optimizer,
+        n_epochs: int,
+        batch_size: int,
+        device: torch.device,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        TODO: Complete the docstring.
+        Train the BPR-MF model using Bayesian Personalized Ranking (BPR) loss.
+
+        Parameters:
+            user_factors (nn.Embedding): User latent factors.
+            item_factors (nn.Embedding): Item latent factors.
+            optimizer (torch.optim.Optimizer): Optimizer for updating the model parameters.
+            n_epochs (int): Number of epochs to train the model.
+            batch_size (int): Size of the batches for training.
+            device (torch.device): Device to run the model on (CPU or GPU).
+
+        Returns:
+            tuple: User and item latent factors as numpy arrays after training.
         """
-        # Get the training data as a sparse matrix in COO format to get the
-        # user, item and rating tensors.
-        train_mat = self.data.get_train_sparse_matrix().tocoo()
 
         # Create a BPRDataset to handle the training data.
         # This dataset will generate triplets (user, positive_item, negative_item).
-        dataset = BPRDataset(train_mat, self.data.get_total_items())
+        dataset = BPRDataset(self.data)
 
         # Create a DataLoader to iterate over the dataset in batches.
         dataloader = DataLoader(
