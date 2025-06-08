@@ -313,7 +313,7 @@ def create_name(
         parts.extend([
             f"f{n_factors}",
             f"lr{str(lr).replace('.', 'p')}",
-            f"hd{'_'.join(map(str, hidden_dims))}",
+            f"hd{'-'.join(map(str, hidden_dims))}",
             f"reg{str(reg).replace('.', 'p')}",
             f"ep{n_epochs}",
             f"bs{batch_size}",

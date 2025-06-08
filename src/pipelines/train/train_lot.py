@@ -111,7 +111,7 @@ if __name__ == "__main__":
     if test_file:
         data_path = "data/dataset/test.txt"
         # For my use:
-        test_path = "data/ml-100k/u1.base"
+        data_path = "data/ml-100k/u1.base"
         BASE_CMD.append("--data_path_test")
         BASE_CMD.append(test_path)
     else:

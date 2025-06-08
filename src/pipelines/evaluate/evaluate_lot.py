@@ -128,6 +128,25 @@ def parse_filename(filename: str) -> Tuple[str, str, Dict[str, Any], str]:
         params = {"k": k, "similarity": similarity}
         config = f"k{k}_{similarity}"
 
+    elif base.startswith("mlp"):
+        recommender = parts[0]
+        strategy = parts[2] + "_" + parts[3]
+        n_factors = int(parts[4][1:])
+        lr = float(parts[5][2:].replace("p", "."))
+        hidden_dims = tuple(int(x) for x in parts[6][1:].split("-"))
+        reg = float(parts[7][3:].replace("p", "."))
+        epochs = int(parts[8][2:])
+        batch_size = int(parts[9][2:])
+        params = {
+            "n_factors": n_factors,
+            "learning_rate": lr,
+            "hidden_dims": hidden_dims,
+            "regularization": reg,
+            "epochs": epochs,
+            "batch_size": batch_size,
+        }
+        config = f"f{n_factors}_lr{lr}_hd{'-'.join(map(str, hidden_dims))}_reg{reg}_ep{epochs}_bs{batch_size}"
+
     else:
         recommender = parts[0]
         strategy = parts[2] + "_" + parts[3]
