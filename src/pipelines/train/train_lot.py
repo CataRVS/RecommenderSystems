@@ -68,7 +68,7 @@ def run_grid_search(model: str):
     }
 
     if model == "mlp":
-        param_grid["--hidden_dims"] = ["64 32", "128 64", "256 128"]
+        param_grid["--hidden_dims"] = [(64, 32), (128, 64), (256, 128)]
 
     print(f"\nStarting grid search for model: {model.upper()}")
     total_runs = len(list(itertools.product(*param_grid.values())))
@@ -78,7 +78,10 @@ def run_grid_search(model: str):
         cmd.extend(["--recommender", model])
 
         for key, value in zip(param_grid.keys(), combo):
-            cmd.extend([key, str(value)])
+            if key == "--hidden_dims":
+                cmd.extend(["--hidden_dims"] + [str(x) for x in value])
+            else:
+                cmd.extend([key, str(value)])
 
         print(f"\nRunning combination {i}/{total_runs}:")
         print(" ".join(cmd))
