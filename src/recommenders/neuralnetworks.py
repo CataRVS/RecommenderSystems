@@ -269,6 +269,7 @@ class GNNRecommender(Recommender):
 
     def _propagate(self, all_embeddings: torch.Tensor) -> torch.Tensor:
         """Propagate through K GCN layers and average."""
+        all_embeddings = all_embeddings.to(self.device)  # [N, D]
         embeds = [all_embeddings]
         h = all_embeddings
         for _ in range(self.n_layers):
