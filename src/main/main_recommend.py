@@ -27,6 +27,7 @@ def load_recommender(
     batch_size: int = 4096,
     device: str | None = None,
     hidden_dims: list[int] = [64, 32],
+    dropout: float = 0.5,
 ) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
@@ -52,6 +53,7 @@ def load_recommender(
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
+        dropout (float): Dropout probability for the MLP recommender.
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -103,6 +105,7 @@ def load_recommender(
             n_epochs=n_epochs,
             batch_size=batch_size,
             device=device,
+            dropout=dropout,
         )
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
@@ -186,7 +189,8 @@ def generate_recommendations(
     n_epochs: int = 10,
     batch_size: int = 4096,
     device: str | None = None,
-    hidden_dims: list[int] = [64, 32]
+    hidden_dims: list[int] = [64, 32],
+    dropout: float = 0.5,
 ) -> Recommendation:
     """
     Generate recommendations using the specified recommender system.
@@ -206,6 +210,7 @@ def generate_recommendations(
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
+        dropout (float): Dropout probability for the MLP recommender.
 
     Returns:
         Recommendation: Instance with the top-k recommendations for the user.
@@ -223,7 +228,8 @@ def generate_recommendations(
         n_epochs=n_epochs,
         batch_size=batch_size,
         device=device,
-        hidden_dims=hidden_dims
+        hidden_dims=hidden_dims,
+        dropout=dropout,
     )
 
     # Load the strategy
@@ -261,7 +267,8 @@ def create_name(
     reg: float | None = None,
     n_epochs: int | None = None,
     batch_size: int | None = None,
-    hidden_dims: list[int] | None = None
+    hidden_dims: list[int] | None = None,
+    dropout: float | None = None,
 ) -> str:
     """
     Create a name for the recommendation file based on the parameters used to generate
@@ -279,6 +286,7 @@ def create_name(
         n_epochs (int | None): Number of epochs for matrix factorization.
         batch_size (int | None): Batch size for matrix factorization.
         hidden_dims (list[int] | None): Hidden dimensions for the MLP recommender.
+        dropout (float | None): Dropout probability for the MLP recommender.
 
     Returns:
         str: Name of the recommendation file.
@@ -317,6 +325,7 @@ def create_name(
             f"reg{str(reg).replace('.', 'p')}",
             f"ep{n_epochs}",
             f"bs{batch_size}",
+            f"drop{str(dropout).replace('.', 'p')}",
         ])
 
     filename = "_".join(parts) + ".csv"
@@ -484,6 +493,14 @@ def main():
         required=False,
         default=[64, 32],
     )
+    # Add the dropout argument for the MLP recommender
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        help="Dropout probability for the MLP recommender",
+        required=False,
+        default=0.5,
+    )
 
     # Add the seed argument
     parser.add_argument(
@@ -539,7 +556,8 @@ def main():
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         device=args.device,
-        hidden_dims=args.hidden_dims
+        hidden_dims=args.hidden_dims,
+        dropout=args.dropout,
     )
 
     # Create the name for the recommendation file
@@ -555,6 +573,7 @@ def main():
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         hidden_dims=args.hidden_dims,
+        dropout=args.dropout,
     )
 
     # If the save path does not end with a slash, add it

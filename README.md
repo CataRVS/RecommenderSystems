@@ -25,8 +25,8 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 ### Generate recommendations
 To generate recommendatios, you have the following options:
-- Run the `main_recommend.py` script contained in the `main` folder with the desired arguments:
-- Run the `train_lot.py` script contained in the `pipelines/train` folder after changing the indicated parameters in the file.
+- Run the `main_recommend.py` script contained in the `src/main` folder with the desired arguments:
+- Run the `train_lot.py` script contained in the `src/pipelines/train` folder after changing the indicated parameters in the file.
 ```bash
-python -m src.main data/ml-100k/u.data
+python -m src.main.main_recommen data/ml-100k/u.data
 ```

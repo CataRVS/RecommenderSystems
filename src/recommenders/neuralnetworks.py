@@ -16,7 +16,7 @@ class MLPRecommender(Recommender):
     Architecture:
         - user embedding of size [n_users, embedding_dim]
         - item embedding of size [n_items, embedding_dim]
-        - MLP: linear -> ReLU -> ... -> linear -> output
+        - MLP: linear -> ReLU -> dropout -> ... -> linear -> output
     Trained with MSE loss on observed ratings.
 
     Args:
@@ -28,6 +28,7 @@ class MLPRecommender(Recommender):
         n_epochs (int): number of training epochs.
         batch_size (int): mini-batch size.
         device (str|None): 'cpu' or 'cuda', or None for auto-detect.
+        dropout (float): dropout probability between layers.
     """
     def __init__(
         self,
@@ -39,6 +40,7 @@ class MLPRecommender(Recommender):
         n_epochs: int = 20,
         batch_size: int = 4096,
         device: str | None = None,
+        dropout: float = 0.5,
     ):
         super().__init__(data)
         # Save dataset and device
@@ -50,6 +52,7 @@ class MLPRecommender(Recommender):
         n_items = data.get_total_items()
         self.embedding_dim = embedding_dim
         self.hidden_dims = hidden_dims
+        self.dropout = dropout
 
         # Embedding layers
         self.user_embedding = nn.Embedding(n_users, embedding_dim)
@@ -57,18 +60,18 @@ class MLPRecommender(Recommender):
         nn.init.normal_(self.user_embedding.weight, 0.0, 0.1)
         nn.init.normal_(self.item_embedding.weight, 0.0, 0.1)
 
-        print(hidden_dims, type(hidden_dims))
-        # Build MLP
+        # Build MLP with Dropout
         layers = []
         input_dim = 2 * embedding_dim
         for h in hidden_dims:
             layers.append(nn.Linear(input_dim, h))
             layers.append(nn.ReLU())
+            layers.append(nn.Dropout(self.dropout))
             input_dim = h
         layers.append(nn.Linear(input_dim, 1))  # final score
         self.mlp = nn.Sequential(*layers)
 
-        # Move to device
+        # Move modules to device
         self.user_embedding.to(self.device)
         self.item_embedding.to(self.device)
         self.mlp.to(self.device)
@@ -97,7 +100,7 @@ class MLPRecommender(Recommender):
         Returns:
             user_embedding_np (np.ndarray): [n_users, embedding_dim]
             item_embedding_np (np.ndarray): [n_items, embedding_dim]
-            mlp (nn.Module): trained MLP (on device)
+            mlp (nn.Module): trained MLP (on device in eval mode).
         """
         # Obtain training data
         users_data, items_data, ratings_data = self.data.get_interactions()

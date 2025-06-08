@@ -17,8 +17,8 @@ logs/
 # Visual Studio Code
 .vscode/
 
-# Txt files with comments
-comentarios.txt
+# Files created to do test (not important)
+testing_things/
 
 # Recommendations files
 recommendations/
