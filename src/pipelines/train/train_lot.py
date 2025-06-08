@@ -48,10 +48,10 @@ def run_knn_search(model: str):
 
 def run_grid_search(model: str):
     """
-    Run grid search with the specified model type ('mf', 'bprmf', or 'mlp').
+    Run grid search with the specified model type ('mf', 'bprmf', 'mlp', or 'gnn').
 
     Args:
-        model (str): The name of the model to run ("mf" or "bprmf" or "mlp").
+        model (str): The name of the model to run ("mf" or "bprmf" or "mlp" or "gnn").
     """
     # Hyperparameter grid for both models
     param_grid = {
@@ -69,6 +69,10 @@ def run_grid_search(model: str):
 
     if model == "mlp":
         param_grid["--hidden_dims"] = [(64, 32), (128, 64), (256, 128)]
+        param_grid["--dropout"] = [0.1, 0.2]
+
+    if model == "gnn":
+        param_grid["--n_layers"] = [2, 3]
 
     print(f"\nStarting grid search for model: {model.upper()}")
     total_runs = len(list(itertools.product(*param_grid.values())))
@@ -91,8 +95,8 @@ def run_grid_search(model: str):
 if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Choose a model between:
-    # "popularity" "random" "knn_user" "knn_item" "mf" "bprmf" "mlp"
-    model = "mlp"
+    # "popularity" "random" "knn_user" "knn_item" "mf" "bprmf" "mlp" "gnn"
+    model = "gnn"
 
     # Path to the training data
     data_path = "data/dataset/train.txt"
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     BASE_CMD.append("--sep")
     BASE_CMD.append(sep)
 
-    if model == "bprmf" or model == "mf" or model == "mlp":
+    if model == "bprmf" or model == "mf" or model == "mlp" or model == "gnn":
         run_grid_search(model)
     elif model == "knn_user" or model == "knn_item":
         run_knn_search(model)
@@ -138,4 +142,4 @@ if __name__ == "__main__":
         subprocess.run(BASE_CMD)
     else:
         print(f"Unknown model: {model}. Please choose from 'popularity', 'random',"
-              "'knn_user', 'knn_item', 'mf', 'bprmf', or 'mlp'.")
+              "'knn_user', 'knn_item', 'mf', 'bprmf', 'mpl', or 'gnn'.")

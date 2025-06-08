@@ -149,6 +149,24 @@ def parse_filename(filename: str) -> Tuple[str, str, Dict[str, Any], str]:
         }
         config = f"f{n_factors}_lr{lr}_hd{'-'.join(map(str, hidden_dims))}_reg{reg}_ep{epochs}_bs{batch_size}"
 
+    elif base.startswith("gnn"):
+        recommender = parts[0]
+        strategy = parts[2] + "_" + parts[3]
+        n_factors = int(parts[4][1:])
+        lr = float(parts[5][2:].replace("p", "."))
+        reg = float(parts[6][3:].replace("p", "."))
+        epochs = int(parts[7][2:])
+        batch_size = int(parts[8][2:])
+        n_layers = int(parts[9][2:])
+        params = {
+            "n_factors": n_factors,
+            "learning_rate": lr,
+            "regularization": reg,
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "n_layers": n_layers,
+        }
+        config = f"f{n_factors}_lr{lr}_reg{reg}_ep{epochs}_bs{batch_size}_nl{n_layers}"
     else:
         recommender = parts[0]
         strategy = parts[2] + "_" + parts[3]
@@ -242,7 +260,7 @@ def run_evaluation(
 
     Parameters:
         model (str): The name of the model to evaluate ("popularity", "random", "mf", "bprmf",
-            "knn_user", "knn_item").
+            "knn_user", "knn_item", "mlp", "gnn").
         recs_dir (str): Directory containing recommendation files.
         train_path (str): Path to the training data file.
         test_path (str): Path to the testing data file or "none" if not used.
@@ -252,8 +270,9 @@ def run_evaluation(
         seed (int): Random seed for reproducibility.
     """
     # Verify that the model is valid
-    if model not in {"popularity", "random", "mf", "bprmf", "knn_user", "knn_item", "mlp"}:
-        print("Model must be one of 'popularity', 'random', 'mf', 'bprmf', 'knn_user', 'knn_item'.")
+    if model not in {"popularity", "random", "mf", "bprmf", "knn_user", "knn_item", "mlp", "gnn"}:
+        print("Model must be one of 'popularity', 'random', 'mf', 'bprmf', 'knn_user', 'knn_item'"
+              ", 'mlp', or 'gnn'.")
         exit(1)
 
     print(f"\nEvaluating recommendations for model: {model.upper()}")
@@ -326,7 +345,8 @@ def run_evaluation(
 
 if __name__ == "__main__":
     ########## CONFIGURATION ##########
-    model = "mlp"  # Options "popularity", "random", "knn_user", "knn_item", "mf", "bprmf", "mlp"
+    # Options "popularity", "random", "knn_user", "knn_item", "mf", "bprmf", "mlp" or "gnn"
+    model = "mlp"
     recs_dir = "results/recommendations/dataset"
     train_path = "data/dataset/train.txt"  # Path to the training data file
     test_path = "data/dataset/test.txt"  # "none" or provide a path to a test file

@@ -28,6 +28,7 @@ def load_recommender(
     device: str | None = None,
     hidden_dims: list[int] = [64, 32],
     dropout: float = 0.5,
+    n_layers: int = 2,
 ) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
@@ -38,6 +39,7 @@ def load_recommender(
     - mf: Matrix factorization recommender.
     - bprmf: Bayesian Personalized Ranking Matrix Factorization recommender.
     - mlp: Neural network recommender using a simple MLP on user and item embeddings.
+    - gnn: Graph Neural Network recommender.
     - UPDATE 1: Add more recommenders if needed.
 
     Parameters:
@@ -54,6 +56,7 @@ def load_recommender(
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
         dropout (float): Dropout probability for the MLP recommender.
+        n_layers (int): Number of layers for the GNN recommender.
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -106,6 +109,17 @@ def load_recommender(
             batch_size=batch_size,
             device=device,
             dropout=dropout,
+        )
+    elif recommender_name == "gnn":
+        recommender = nn.GNNRecommender(
+            data,
+            embedding_dim=n_factors,
+            lr=lr,
+            weight_decay=reg,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            n_layers=n_layers,
+            device=device,
         )
     else:
         print(f"Recommender {recommender_name} not found. Check the available "
@@ -191,6 +205,7 @@ def generate_recommendations(
     device: str | None = None,
     hidden_dims: list[int] = [64, 32],
     dropout: float = 0.5,
+    n_layers: int = 2,
 ) -> Recommendation:
     """
     Generate recommendations using the specified recommender system.
@@ -211,6 +226,7 @@ def generate_recommendations(
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
         dropout (float): Dropout probability for the MLP recommender.
+        n_layers (int): Number of layers for the GNN recommender.
 
     Returns:
         Recommendation: Instance with the top-k recommendations for the user.
@@ -230,6 +246,7 @@ def generate_recommendations(
         device=device,
         hidden_dims=hidden_dims,
         dropout=dropout,
+        n_layers=n_layers,
     )
 
     # Load the strategy
@@ -269,6 +286,7 @@ def create_name(
     batch_size: int | None = None,
     hidden_dims: list[int] | None = None,
     dropout: float | None = None,
+    n_layers: int | None = None,
 ) -> str:
     """
     Create a name for the recommendation file based on the parameters used to generate
@@ -287,6 +305,7 @@ def create_name(
         batch_size (int | None): Batch size for matrix factorization.
         hidden_dims (list[int] | None): Hidden dimensions for the MLP recommender.
         dropout (float | None): Dropout probability for the MLP recommender.
+        n_layers (int | None): Number of layers for the GNN recommender.
 
     Returns:
         str: Name of the recommendation file.
@@ -326,6 +345,16 @@ def create_name(
             f"ep{n_epochs}",
             f"bs{batch_size}",
             f"drop{str(dropout).replace('.', 'p')}",
+        ])
+
+    elif recommender_name == "gnn":
+        parts.extend([
+            f"f{n_factors}",
+            f"lr{str(lr).replace('.', 'p')}",
+            f"reg{str(reg).replace('.', 'p')}",
+            f"ep{n_epochs}",
+            f"bs{batch_size}",
+            f"nl{n_layers}",
         ])
 
     filename = "_".join(parts) + ".csv"
@@ -502,6 +531,16 @@ def main():
         default=0.5,
     )
 
+    # GNN Arguments
+    # Add the number of layers argument for the GNN recommender
+    parser.add_argument(
+        "--n_layers",
+        type=int,
+        help="Number of layers for the GNN recommender",
+        required=False,
+        default=2,
+    )
+
     # Add the seed argument
     parser.add_argument(
         "--seed",
@@ -558,6 +597,7 @@ def main():
         device=args.device,
         hidden_dims=args.hidden_dims,
         dropout=args.dropout,
+        n_layers=args.n_layers,
     )
 
     # Create the name for the recommendation file
@@ -574,6 +614,7 @@ def main():
         batch_size=args.batch_size,
         hidden_dims=args.hidden_dims,
         dropout=args.dropout,
+        n_layers=args.n_layers,
     )
 
     # If the save path does not end with a slash, add it

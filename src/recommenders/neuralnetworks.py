@@ -201,3 +201,162 @@ class MLPRecommender(Recommender):
         recs = [(items_list[i], float(scores[i])) for i in top_sorted]
         recommendation.add_recommendations(user_id, recs)
         return recommendation
+
+
+
+class GNNRecommender(Recommender):
+    """
+    LightGCN-style GNN Recommender:
+
+    - Initialize user & item embeddings.
+    - Build normalized bipartite adjacency from train interactions.
+    - In each epoch, propagate embeddings through K graph layers:
+        E⁽⁰⁾ = [U; V]
+        E⁽ˡ⁾ = Â · E⁽ˡ⁻¹⁾
+      where Â is symmetrically normalized A.
+    - Final embedding E* = (1/(K+1)) * Σₗ₌₀ᵏ E⁽ˡ⁾.
+    - Predict ratings via dot(u*, v*), train with MSELoss.
+    """
+    def __init__(
+        self,
+        data: Data,
+        embedding_dim: int = 32,
+        lr: float = 1e-3,
+        weight_decay: float = 1e-4,
+        n_epochs: int = 20,
+        batch_size: int = 4096,
+        n_layers: int = 3,
+        device: str | None = None,
+    ):
+        super().__init__(data)
+        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
+        n_users = data.get_total_users()
+        n_items = data.get_total_items()
+        self.n_nodes = n_users + n_items
+        self.batch_size = batch_size
+        self.n_epochs = n_epochs
+        self.n_layers = n_layers
+
+        # 1) Embeddings
+        self.user_embedding = nn.Embedding(n_users, embedding_dim)
+        self.item_embedding = nn.Embedding(n_items, embedding_dim)
+        nn.init.normal_(self.user_embedding.weight, 0.0, 0.1)
+        nn.init.normal_(self.item_embedding.weight, 0.0, 0.1)
+
+        # 2) Build normalized adjacency once
+        users_data, items_data, _ = self.data.get_interactions()
+        # bipartite edges: user → (n_users + item)
+        rows = torch.tensor(np.concatenate([users_data, items_data + n_users]), dtype=torch.long)
+        cols = torch.tensor(np.concatenate([items_data + n_users, users_data]), dtype=torch.long)
+        idx = torch.stack([rows, cols], dim=0)
+        # compute symmetric degree
+        deg = np.bincount(idx[0].cpu().numpy(), minlength=self.n_nodes)
+        deg_inv_sqrt = torch.tensor(1.0/np.sqrt(deg+1e-12), dtype=torch.float32)
+        # edge weights = 1/sqrt(deg[u]*deg[v])
+        vals = deg_inv_sqrt[idx[0]] * deg_inv_sqrt[idx[1]]
+        self.adj = torch.sparse.FloatTensor(idx, vals, (self.n_nodes, self.n_nodes)).coalesce().to(self.device)
+
+        # 3) Optimizer & loss
+        self.optimizer = torch.optim.AdamW(
+            list(self.user_embedding.parameters()) +
+            list(self.item_embedding.parameters()),
+            lr=lr, weight_decay=weight_decay
+        )
+        self.criterion = nn.MSELoss()
+
+        # 4) Train
+        self.user_final, self.item_final = self._train()
+
+    def _propagate(self, all_embeddings: torch.Tensor) -> torch.Tensor:
+        """Propagate through K GCN layers and average."""
+        embeds = [all_embeddings]
+        h = all_embeddings
+        for _ in range(self.n_layers):
+            # sparse mm
+            h = torch.sparse.mm(self.adj, h)
+            embeds.append(h)
+        # mean of [E⁽⁰⁾…E⁽ᴷ⁾]
+        return torch.stack(embeds, dim=1).mean(dim=1)
+
+    def _train(self):
+        # prepare training data
+        users_data, items_data, ratings_data = self.data.get_interactions()
+        users = torch.tensor(users_data, dtype=torch.long)
+        items = torch.tensor(items_data, dtype=torch.long)
+        ratings = torch.tensor(ratings_data, dtype=torch.float32)
+        ds = TensorDataset(users, items, ratings)
+        loader = DataLoader(ds, batch_size=self.batch_size, shuffle=True)
+
+        n_users = self.data.get_total_users()
+
+        self.user_embedding.train()
+        self.item_embedding.train()
+
+        for epoch in range(1, self.n_epochs+1):
+            epoch_loss = 0.0
+            count = 0
+
+            # propagate once per epoch
+            E0 = torch.cat([self.user_embedding.weight, self.item_embedding.weight], dim=0)
+
+            for u_batch, i_batch, r_batch in tqdm(loader, desc=f"GNN Epoch {epoch}", unit="batch"):
+                u = u_batch.to(self.device)
+                i = (i_batch + n_users).to(self.device)
+                r = r_batch.to(self.device)
+
+                # look up embeddings
+                E_final = self._propagate(E0)
+                u_emb = E_final[u]  # [B, D]
+                i_emb = E_final[i]  # [B, D]
+
+                preds = (u_emb * i_emb).sum(dim=1)
+
+                loss = self.criterion(preds, r)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
+                epoch_loss += loss.item() * u.size(0)
+                count += u.size(0)
+
+            print(f"Epoch {epoch}/{self.n_epochs}, Loss: {epoch_loss/count:.4f}")
+
+        # after training, compute final embeddings for inference
+        E0 = torch.cat([self.user_embedding.weight, self.item_embedding.weight], dim=0)
+        E_final = self._propagate(E0).detach().cpu().numpy()
+        # split back into user/item
+        return E_final[: self.data.get_total_users()], E_final[self.data.get_total_users():]
+
+    def recommend(
+        self,
+        user_id: int,
+        strategy: Strategy,
+        recommendation: Recommendation | None = None,
+        n: int = 10
+    ) -> Recommendation:
+        if recommendation is None:
+            recommendation = Recommendation()
+
+        candidates = strategy.filter(user_id)
+        u_idx = self.data.to_internal_user(user_id)
+        if u_idx is None or not candidates:
+            return recommendation
+
+        u_emb = self.user_final[u_idx]  # [D]
+        mapped = [(c, self.data.to_internal_item(c)) for c in candidates]
+        valid = [(c, idx) for c, idx in mapped if idx is not None]
+        if not valid:
+            return recommendation
+
+        items, idxs = zip(*valid)
+        idxs = np.array(idxs, dtype=np.int64)
+        v_embs = self.item_final[idxs]   # [M, D]
+        scores = np.dot(v_embs, u_emb)   # [M]
+
+        top_k = min(n, len(scores))
+        top_idx = np.argpartition(-scores, top_k-1)[:top_k]
+        top_sorted = top_idx[np.argsort(-scores[top_idx])]
+
+        recs = [(items[i], float(scores[i])) for i in top_sorted]
+        recommendation.add_recommendations(user_id, recs)
+        return recommendation
