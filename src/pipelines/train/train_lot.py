@@ -48,33 +48,36 @@ def run_knn_search(model: str):
 
 def run_grid_search(model: str):
     """
-    Run grid search with the specified model type ('mf' or 'bprmf').
+    Run grid search with the specified model type ('mf', 'bprmf', or 'mlp').
 
     Args:
-        model (str): The name of the model to run ("mf" or "bprmf").
+        model (str): The name of the model to run ("mf" or "bprmf" or "mlp").
     """
     # Hyperparameter grid for both models
-    PARAM_GRID = {
+    param_grid = {
         # "--n_factors": [32, 64, 128],
         # "--lr": [0.01, 0.005],
         # "--reg": [0.1, 0.01],
         # "--n_epochs": [50, 100],
         # "--batch_size": [2048, 4096]
-        "--n_factors": [16],
+        "--n_factors": [264],
         "--lr": [0.01, 0.005],
         "--reg": [0.1, 0.01],
-        "--n_epochs": [50],
-        "--batch_size": [4096]
+        "--n_epochs": [100],
+        "--batch_size": [2048]
     }
 
-    print(f"\nStarting grid search for model: {model.upper()}")
-    total_runs = len(list(itertools.product(*PARAM_GRID.values())))
+    if model == "mlp":
+        param_grid["--hidden_layers"] = ["64 32", "128 64", "256 128"]
 
-    for i, combo in enumerate(itertools.product(*PARAM_GRID.values()), 1):
+    print(f"\nStarting grid search for model: {model.upper()}")
+    total_runs = len(list(itertools.product(*param_grid.values())))
+
+    for i, combo in enumerate(itertools.product(*param_grid.values()), 1):
         cmd = BASE_CMD.copy()
         cmd.extend(["--recommender", model])
 
-        for key, value in zip(PARAM_GRID.keys(), combo):
+        for key, value in zip(param_grid.keys(), combo):
             cmd.extend([key, str(value)])
 
         print(f"\nRunning combination {i}/{total_runs}:")
@@ -85,8 +88,8 @@ def run_grid_search(model: str):
 if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Choose a model between:
-    # "popularity" "random" "knn_user" "knn_item" "mf" or "bprmf"
-    model = "mf"
+    # "popularity" "random" "knn_user" "knn_item" "mf" "bprmf" "mlp"
+    model = "mlp"
 
     # Path to the training data
     data_path = "data/dataset/train.txt"
@@ -94,7 +97,17 @@ if __name__ == "__main__":
     data_path = "data/ml-100k/u1.base"
 
     test_file = True
+
+    # For my use:
+    train_path = "data/ml-100k/u1.base"  # Path to the training data file
+    test_file = True
+    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test 
+    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"  # Path to the training data file
+    # test_file = False  # "none" or provide a path to a test file
+
     if test_file:
+        data_path = "data/dataset/test.txt"
+        # For my use:
         test_path = "data/ml-100k/u1.base"
         BASE_CMD.append("--data_path_test")
         BASE_CMD.append(test_path)
@@ -109,7 +122,7 @@ if __name__ == "__main__":
     BASE_CMD.append("--sep")
     BASE_CMD.append(sep)
 
-    if model == "bprmf" or model == "mf":
+    if model == "bprmf" or model == "mf" or model == "mlp":
         run_grid_search(model)
     elif model == "knn_user" or model == "knn_item":
         run_knn_search(model)
@@ -122,4 +135,4 @@ if __name__ == "__main__":
         subprocess.run(BASE_CMD)
     else:
         print(f"Unknown model: {model}. Please choose from 'popularity', 'random',"
-              "'knn_user', 'knn_item', 'mf', or 'bprmf'.")
+              "'knn_user', 'knn_item', 'mf', 'bprmf', or 'mlp'.")

@@ -1,9 +1,10 @@
 import argparse
 import os
 import pandas as pd
+import src.recommenders.basic_recommenders as rec
 import src.recommenders.knn as knn
 import src.recommenders.matrix_factorisation as mf
-import src.recommenders.basic_recommenders as rec
+import src.recommenders.neuralnetworks as nn
 import src.utils.similarities as sim
 import src.utils.strategies as st
 from src.datamodule.data import Data
@@ -25,6 +26,7 @@ def load_recommender(
     n_epochs: int = 10,
     batch_size: int = 4096,
     device: str | None = None,
+    hidden_dims: list[int] = [64, 32],
 ) -> rec.Recommender:
     """
     Load the specified recommender system. Available recommenders are:
@@ -34,6 +36,7 @@ def load_recommender(
     - knn_item: Item-based collaborative filtering recommender.
     - mf: Matrix factorization recommender.
     - bprmf: Bayesian Personalized Ranking Matrix Factorization recommender.
+    - mlp: Neural network recommender using a simple MLP on user and item embeddings.
     - UPDATE 1: Add more recommenders if needed.
 
     Parameters:
@@ -48,6 +51,7 @@ def load_recommender(
         n_epochs (int): Number of epochs for matrix factorization.
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
+        hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
 
     Returns:
         Recommender: Instance of the specified recommender system.
@@ -83,6 +87,17 @@ def load_recommender(
         recommender = mf.BPRMFRecommender(
             data,
             embedding_dim=n_factors,
+            lr=lr,
+            weight_decay=reg,
+            n_epochs=n_epochs,
+            batch_size=batch_size,
+            device=device,
+        )
+    elif recommender_name == "mlp":
+        recommender = nn.MLPRecommender(
+            data,
+            embedding_dim=n_factors,
+            hidden_dims=hidden_dims,
             lr=lr,
             weight_decay=reg,
             n_epochs=n_epochs,
@@ -171,6 +186,7 @@ def generate_recommendations(
     n_epochs: int = 10,
     batch_size: int = 4096,
     device: str | None = None,
+    hidden_dims: list[int] = [64, 32]
 ) -> Recommendation:
     """
     Generate recommendations using the specified recommender system.
@@ -189,6 +205,7 @@ def generate_recommendations(
         n_epochs (int): Number of epochs for matrix factorization.
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
+        hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
 
     Returns:
         Recommendation: Instance with the top-k recommendations for the user.
@@ -206,6 +223,7 @@ def generate_recommendations(
         n_epochs=n_epochs,
         batch_size=batch_size,
         device=device,
+        hidden_dims=hidden_dims
     )
 
     # Load the strategy
@@ -242,7 +260,8 @@ def create_name(
     lr: float | None = None,
     reg: float | None = None,
     n_epochs: int | None = None,
-    batch_size: int | None = None
+    batch_size: int | None = None,
+    hidden_dims: list[int] | None = None
 ) -> str:
     """
     Create a name for the recommendation file based on the parameters used to generate
@@ -259,6 +278,7 @@ def create_name(
         reg (float | None): Regularization strength for matrix factorization.
         n_epochs (int | None): Number of epochs for matrix factorization.
         batch_size (int | None): Batch size for matrix factorization.
+        hidden_dims (list[int] | None): Hidden dimensions for the MLP recommender.
 
     Returns:
         str: Name of the recommendation file.
@@ -284,6 +304,16 @@ def create_name(
         parts.extend([
             f"f{n_factors}",
             f"lr{str(lr).replace('.', 'p')}",
+            f"reg{str(reg).replace('.', 'p')}",
+            f"ep{n_epochs}",
+            f"bs{batch_size}",
+        ])
+
+    elif recommender_name == "mlp":
+        parts.extend([
+            f"f{n_factors}",
+            f"lr{str(lr).replace('.', 'p')}",
+            f"hd{'_'.join(map(str, hidden_dims))}",
             f"reg{str(reg).replace('.', 'p')}",
             f"ep{n_epochs}",
             f"bs{batch_size}",
@@ -444,6 +474,16 @@ def main():
         required=False,
         default=None,
     )
+    # MLP Arguments
+    # Add the hidden dimensions argument for the MLP recommender
+    parser.add_argument(
+        "--hidden_dims",
+        nargs="+",
+        type=int,
+        help="Hidden layer sizes for the MLP recommender, e.g. --hidden_dims 64 32",
+        required=False,
+        default=[64, 32],
+    )
 
     # Add the seed argument
     parser.add_argument(
@@ -499,6 +539,7 @@ def main():
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         device=args.device,
+        hidden_dims=args.hidden_dims
     )
 
     # Create the name for the recommendation file
@@ -512,7 +553,8 @@ def main():
         lr=args.lr,
         reg=args.reg,
         n_epochs=args.n_epochs,
-        batch_size=args.batch_size
+        batch_size=args.batch_size,
+        hidden_dims=args.hidden_dims,
     )
 
     # If the save path does not end with a slash, add it

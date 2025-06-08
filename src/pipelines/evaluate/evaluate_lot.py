@@ -231,7 +231,7 @@ def run_evaluation(
         seed (int): Random seed for reproducibility.
     """
     # Verify that the model is valid
-    if model not in {"popularity", "random", "mf", "bprmf", "knn_user", "knn_item"}:
+    if model not in {"popularity", "random", "mf", "bprmf", "knn_user", "knn_item", "mlp"}:
         print("Model must be one of 'popularity', 'random', 'mf', 'bprmf', 'knn_user', 'knn_item'.")
         exit(1)
 
@@ -305,10 +305,16 @@ def run_evaluation(
 
 if __name__ == "__main__":
     ########## CONFIGURATION ##########
-    model = "random"  # Options: "popularity", "random", "knn_user", "knn_item", "mf", "bprmf"
+    model = "mlp"  # Options "popularity", "random", "knn_user", "knn_item", "mf", "bprmf", "mlp"
     recs_dir = "results/recommendations/dataset"
     train_path = "data/dataset/train.txt"  # Path to the training data file
     test_path = "data/dataset/test.txt"  # "none" or provide a path to a test file
+
+    # For my use:
+    train_path = "data/ml-100k/u1.base"  # Path to the training data file
+    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test 
+    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"  # Path to the training data file
+    # test_path = "none"  # "none" or provide a path to a test file
     test_size = 0.1
     sep = "\t"
     output_dir = "results/metrics/"
