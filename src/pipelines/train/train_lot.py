@@ -68,7 +68,7 @@ def run_grid_search(model: str):
     }
 
     if model == "mlp":
-        param_grid["--hidden_layers"] = ["64 32", "128 64", "256 128"]
+        param_grid["--hidden_dims"] = ["64 32", "128 64", "256 128"]
 
     print(f"\nStarting grid search for model: {model.upper()}")
     total_runs = len(list(itertools.product(*param_grid.values())))
