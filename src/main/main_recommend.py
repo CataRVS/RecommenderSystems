@@ -4,7 +4,7 @@ import pandas as pd
 import src.recommenders.basic_recommenders as rec
 import src.recommenders.knn as knn
 import src.recommenders.matrix_factorisation as mf
-import src.recommenders.neuralnetworks as nn
+import recommenders.neural_networks as nn
 import src.utils.similarities as sim
 import src.utils.strategies as st
 from src.datamodule.data import AbstractData, Data
