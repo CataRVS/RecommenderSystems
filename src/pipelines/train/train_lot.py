@@ -102,14 +102,14 @@ if __name__ == "__main__":
     strategy = "no_filtering"
 
     # Info for the data
-    data_path = "data/dataset/train.txt"
+    train_path = "data/dataset/train.txt"
     sep = "\t"
     test_file = True
 
     # For my use:
-    data_path = "data/ml-100k/u1.base"  # Path to the training data file
+    train_path = "data/ml-100k/u1.base"  # Path to the training data file
     test_file = True
-    data_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
+    train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
     test_file = False
 
     if test_file:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     # Include the parameters in the command
     BASE_CMD.append("--data_path_train")
-    BASE_CMD.append(data_path)
+    BASE_CMD.append(train_path)
     BASE_CMD.append("--sep")
     BASE_CMD.append(sep)
 
