@@ -350,7 +350,7 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Options "popularity", "random", "knn_user", "knn_item", "mf", "bprmf", "mlp" or "gnn"
     model = "mlp"
-    recs_dir = "results/recommendations/dataset"
+    recs_dir = "results/recommendations/NewYork_10"
     train_path = "data/dataset/train.txt"  # Path to the training data file
     test_path = "data/dataset/test.txt"  # "none" or provide a path to a test file
 

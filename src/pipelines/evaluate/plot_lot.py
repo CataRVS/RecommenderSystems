@@ -131,7 +131,7 @@ def plot_bprmf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
         print("n_factors column is missing in BPRMF data.")
         return
     try:
-        plt.figure(figsize=(6, 4))
+        plt.figure(figsize=(10, 6))
         sns.lineplot(data=df_bprmf, x='n_factors', y='precision', marker='o')
         plt.title('BPRMF: Precision by Number of Latent Factors')
         plt.xlabel('Number of Factors')
@@ -167,7 +167,7 @@ def plot_mf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
         'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity'
     ]])
 
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(10, 6))
     sns.lineplot(data=df_mf, x='n_factors', y='precision', marker='o')
     plt.title('MF: Precision by Number of Latent Factors')
     plt.xlabel('Number of Factors')
@@ -277,6 +277,6 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     metrics_path = "results/metrics/NewYork"
     graphs_path = "results/graphs/NewYork"
-    metrics_path = "results/metrics/ml-100k"
-    graphs_path = "results/graphs/ml-100k"
+    # metrics_path = "results/metrics/ml-100k"
+    # graphs_path = "results/graphs/ml-100k"
     main(metrics_path, graphs_path)

@@ -128,6 +128,8 @@ if __name__ == "__main__":
     BASE_CMD.append(train_path)
     BASE_CMD.append("--sep")
     BASE_CMD.append(sep)
+    BASE_CMD.append("--strategy")
+    BASE_CMD.append(strategy)
 
     if model == "bprmf" or model == "mf" or model == "mlp" or model == "gnn":
         run_grid_search(model)
