@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 import numpy as np
 
 
@@ -8,17 +8,17 @@ class Similarity(ABC):
     Abstract base class for similarity measures.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed similarity matrix for all users/items.
     """
     sim_matrix: np.ndarray
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new Similarity instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         self.data = data
 
@@ -43,16 +43,16 @@ class CosineSimilarityUsers(Similarity):
     matrix for all users and return the similarity score for the given users.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed cosine similarity matrix for all users.
     """
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new CosineSimilarity instance for users. It computes the cosine
         similarity matrix for all users based on the user-item interactions.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         # Call the parent constructor
         super().__init__(data)
@@ -111,16 +111,16 @@ class CosineSimilarityItems(Similarity):
     matrix for all items and return the similarity score for the given items.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed cosine similarity matrix for all items.
     """
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new CosineSimilarity instance for items. It computes the cosine
         similarity matrix for all items based on the user-item interactions.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         # Call the parent constructor
         super().__init__(data)
@@ -182,12 +182,12 @@ class PearsonCorrelationUsers(Similarity):
     users.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed Pearson correlation similarity matrix for
             all users.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         super().__init__(data)
 
         # To hurry up the computation, we will use the sparse matrix representation
@@ -262,18 +262,18 @@ class PearsonCorrelationItems(Similarity):
     items.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         sim_matrix (np.ndarray): Precomputed Pearson correlation similarity matrix for
             all items.
     """
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new PearsonCorrelationSimilarity instance for items. It computes the
         Pearson correlation similarity matrix for all items based on the user-item
         interactions.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         super().__init__(data)
 

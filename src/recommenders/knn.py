@@ -1,7 +1,7 @@
 from src.recommenders.basic_recommenders import Recommender
 from src.utils.utils import Recommendation
 from src.utils.similarities import Similarity, PearsonCorrelationUsers, PearsonCorrelationItems
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from src.utils.strategies import Strategy
 from typing import List, Tuple
 import numpy as np
@@ -12,14 +12,14 @@ class KNNUserBasedRecommender(Recommender):
     KNN user-based collaborative filtering recommender system.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         k (int): Number of similar users to consider for prediction.
         threshold (float): Rating threshold above which a neighbor “votes” for the item.
         similarity (Similarity): Similarity measure to use for finding similar users.
     """
     def __init__(
         self,
-        data: Data,
+        data: AbstractData,
         k: int = 10,
         similarity_measure: Similarity | None = None,
         threshold: float = 4.0
@@ -28,7 +28,7 @@ class KNNUserBasedRecommender(Recommender):
         Create a new KNNUserBasedRecommender instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
             k (int): Number of similar users to consider for prediction.
             threshold (float): Rating threshold above which a neighbor “votes” for the item.
             similarity_measure (Similarity|None): Similarity measure to use for finding
@@ -108,18 +108,18 @@ class KNNItemBasedRecommender(Recommender):
     KNN item-based collaborative filtering recommender system.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         k (int): Number of similar items to consider for prediction.
         similarity (Similarity): Similarity measure to use for finding similar items.
     """
     def __init__(
-        self, data: Data, k: int = 10, similarity_measure: Similarity | None = None
+        self, data: AbstractData, k: int = 10, similarity_measure: Similarity | None = None
     ) -> None:
         """
         Create a new KNNItemBasedRecommender instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
             k (int): Number of similar items to consider for prediction.
             similarity_measure (Similarity | None): Similarity measure to use for finding
                 similar items. If None, the default PearsonCorrelationSimilarity is used.

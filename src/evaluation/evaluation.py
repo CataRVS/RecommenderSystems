@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from typing import Dict, List
 import numpy as np
 
@@ -8,12 +8,12 @@ class Evaluation(ABC):
     """
     Abstract base class for evaluation metrics.
     """
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new Evaluation instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): Data instance with the user-item interactions.
         """
         self.data = data
 

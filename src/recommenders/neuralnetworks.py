@@ -4,7 +4,7 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from src.recommenders.basic_recommenders import Recommender
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from src.utils.utils import Recommendation
 from src.utils.strategies import Strategy
 
@@ -20,7 +20,7 @@ class MLPRecommender(Recommender):
     Trained with MSE loss on observed ratings.
 
     Args:
-        data (Data): instance holding train/test splits and mappings.
+        data (AbstractData): instance holding train/test splits and mappings.
         embedding_dim (int): dimension of user/item embeddings.
         hidden_dims (List[int]): sizes of hidden layers in the MLP.
         lr (float): learning rate for AdamW optimizer.
@@ -31,7 +31,7 @@ class MLPRecommender(Recommender):
     """
     def __init__(
         self,
-        data: Data,
+        data: AbstractData,
         embedding_dim: int = 32,
         hidden_dims: list[int] = [64, 32],
         lr: float = 1e-3,
@@ -207,7 +207,7 @@ class GNNRecommender(Recommender):
     """
     def __init__(
         self,
-        data: Data,
+        data: AbstractData,
         embedding_dim: int = 32,
         lr: float = 1e-3,
         weight_decay: float = 1e-4,

@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from src.recommenders.basic_recommenders import Recommender
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from src.utils.datasets import BPRDataset
 from src.utils.utils import Recommendation
 from src.utils.strategies import Strategy
@@ -17,14 +17,14 @@ class MFRecommender(Recommender):
     Matrix Factorization Recommender: A recommender system based on matrix factorization.
 
     Attributes:
-        data (Data): The dataset containing user-item interactions.
+        data (AbstractData): The dataset containing user-item interactions.
         writer (SummaryWriter): TensorBoard writer for logging training metrics.
         user_factors (np.ndarray): Learned user latent factors after training.
         item_factors (np.ndarray): Learned item latent factors after training.
     """
     def __init__(
         self,
-        data: Data,
+        data: AbstractData,
         embedding_dim: int = 20,
         lr: float = 1e-2,
         weight_decay: float = 1e-4,
@@ -37,7 +37,7 @@ class MFRecommender(Recommender):
         Initialize the Matrix Factorization Recommender and train the model.
 
         Parameters:
-            data (Data): The dataset containing user-item interactions.
+            data (AbstractData): The dataset containing user-item interactions.
             embedding_dim (int): The dimensionality of the user and item embeddings.
             lr (float): Learning rate for the optimizer.
             weight_decay (float): Weight decay for the optimizer.
@@ -251,14 +251,14 @@ class BPRMFRecommender(Recommender):
     BPR-MF Recommender: Matrix Factorization optimized with Bayesian Personalized Ranking.
 
     Attributes:
-        data (Data): The dataset containing user-item interactions.
+        data (AbstractData): The dataset containing user-item interactions.
         writer (SummaryWriter): TensorBoard writer for logging training metrics.
         user_factors (np.ndarray): Learned user latent factors after training.
         item_factors (np.ndarray): Learned item latent factors after training.
     """
     def __init__(
         self,
-        data: Data,
+        data: AbstractData,
         embedding_dim: int = 20,
         lr: float = 1e-2,
         weight_decay: float = 1e-4,
@@ -271,7 +271,7 @@ class BPRMFRecommender(Recommender):
         Initialize the BPR-MF Recommender and train the model.
 
         Parameters:
-            data (Data): The dataset containing user-item interactions.
+            data (AbstractData): The dataset containing user-item interactions.
             embedding_dim (int): The dimensionality of the user and item embeddings.
             lr (float): Learning rate for the optimizer.
             weight_decay (float): Weight decay for the optimizer.

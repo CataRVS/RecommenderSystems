@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from src.utils.utils import Recommendation
 from src.utils.strategies import Strategy
 import random
@@ -10,15 +10,15 @@ class Recommender(ABC):
     Abstract base class for recommenders.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new Recommender instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         self.data = data
 
@@ -52,16 +52,16 @@ class PopularityRecommender(Recommender):
     Recommends the most popular items (most consumed).
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
         popularity_scores (dict): Popularity score (count) of each item.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new PopularityRecommender instance and compute the popularity scores.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         # Call the parent constructor
         super().__init__(data)
@@ -125,7 +125,7 @@ class RandomRecommender(Recommender):
     Recommends random items to users.
 
     Attributes:
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): AbstractData instance with the user-item interactions.
     """
 
     def recommend(

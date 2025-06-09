@@ -7,7 +7,7 @@ import src.recommenders.matrix_factorisation as mf
 import src.recommenders.neuralnetworks as nn
 import src.utils.similarities as sim
 import src.utils.strategies as st
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData, Data
 from src.utils.utils import Recommendation, set_seed
 from src.utils.similarities import Similarity
 from src.utils.strategies import Strategy
@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 def load_recommender(
     recommender_name: str,
-    data: Data,
+    data: AbstractData,
     k: int = 5,
     threshold: float = 1.0,
     similarity_measure: str = "pearson",
@@ -43,7 +43,7 @@ def load_recommender(
 
     Parameters:
         recommender_name (str): Name of the recommender to load.
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): Data instance with the user-item interactions.
         k (int): Number of neighbors to consider for KNN recommenders.
         threshold (float): Threshold for KNN recommenders.
         similarity_measure (str | None): Similarity measure to use for KNN recommenders.
@@ -126,7 +126,7 @@ def load_recommender(
     return recommender
 
 
-def load_strategy(strategy_name: str, data: Data) -> Strategy:
+def load_strategy(strategy_name: str, data: AbstractData) -> Strategy:
     """
     Load the specified recommendation strategy. Available strategies are:
     - exclude_seen: Exclude items already seen by the user.
@@ -135,7 +135,7 @@ def load_strategy(strategy_name: str, data: Data) -> Strategy:
 
     Parameters:
         strategy_name (str): Name of the recommendation strategy to load.
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): Data instance with the user-item interactions.
 
     Returns:
         Strategy: Instance of the specified recommendation strategy.
@@ -152,7 +152,7 @@ def load_strategy(strategy_name: str, data: Data) -> Strategy:
     return strategy
 
 
-def load_similarity(similarity_name: str, data: Data, mode: str) -> Similarity:
+def load_similarity(similarity_name: str, data: AbstractData, mode: str) -> Similarity:
     """
     Load the specified similarity measure. Available measures are:
     - cosine: Cosine similarity.
@@ -161,7 +161,7 @@ def load_similarity(similarity_name: str, data: Data, mode: str) -> Similarity:
 
     Parameters:
         similarity_name (str): Name of the similarity measure to load.
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): Data instance with the user-item interactions.
         mode (str): Mode of the recommender system (user or item).
 
     Returns:
@@ -190,7 +190,7 @@ def generate_recommendations(
     recommender_name: str,
     n_items_to_recommend: int,
     strategy_name: str,
-    data: Data,
+    data: AbstractData,
     k: int = 5,
     threshold: float = 1.0,
     similarity: str = "pearson",
@@ -210,7 +210,7 @@ def generate_recommendations(
         recommender_name (str): Name of the recommender to use.
         n_items_to_recommend (int): Number of recommendations to generate for each user.
         strategy_name (str): Name of the recommendation strategy to use.
-        data (Data): Data instance with the user-item interactions.
+        data (AbstractData): Data instance with the user-item interactions.
         k (int): Number of neighbors to consider for KNN recommenders.
         threshold (float): Threshold for KNN recommenders.
         similarity (str): Similarity measure to use for KNN recommenders.

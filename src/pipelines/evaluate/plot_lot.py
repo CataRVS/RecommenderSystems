@@ -277,6 +277,6 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     metrics_path = "results/metrics/NewYork"
     graphs_path = "results/graphs/NewYork"
-    # metrics_path = "results/metrics/ml-100k"
-    # graphs_path = "results/graphs/ml-100k"
+    metrics_path = "results/metrics/ml-100k"
+    graphs_path = "results/graphs/ml-100k"
     main(metrics_path, graphs_path)

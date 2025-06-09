@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from typing import Dict, Tuple, Any, List
 
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData, Data
 from src.utils.utils import set_seed
 import src.evaluation.evaluation as ev
 
@@ -26,7 +26,7 @@ def load_data(
     test_size: float,
     ignore_first: bool,
     seed: int = 42,
-) -> Data:
+) -> AbstractData:
     """
     Load the training and testing data from the specified paths.
 
@@ -39,7 +39,7 @@ def load_data(
         seed (int): Random seed for reproducibility.
 
     Returns:
-        Data: An instance of the Data class containing the loaded data.
+        AbstractData: An instance of the AbstractData class containing the loaded data.
     """
     # Set the random seed so the test split is reproducible
     set_seed(seed)
@@ -64,14 +64,14 @@ def load_data(
         exit(1)
 
 
-def load_evaluation_metric(metric_name: str, data: Data) -> ev.Evaluation:
+def load_evaluation_metric(metric_name: str, data: AbstractData) -> ev.Evaluation:
     """
     Load the evaluation metric based on the provided metric name.
     Available metrics are "precision", "recall", "ndcg", "epc", "gini", and "aggregate_diversity".
 
     Parameters:
         metric_name (str): Name of the metric to load.
-        data (Data): An instance of the Data class containing the data.
+        data (AbstractData): An instance of the AbstractData class containing the data.
 
     Returns:
         Evaluation: An instance of the evaluation metric class corresponding to the metric name.
@@ -179,13 +179,13 @@ def parse_filename(filename: str) -> Tuple[str, str, Dict[str, Any], str]:
     return recommender, strategy, params, config
 
 
-def evaluate_file(file_path: str, data: Data) -> Dict[str, float]:
+def evaluate_file(file_path: str, data: AbstractData) -> Dict[str, float]:
     """
     Evaluate a recommendation file using the specified metrics.
 
     Parameters:
         file_path (str): Path to the recommendation file.
-        data (Data): An instance of the Data class containing the data.
+        data (AbstractData): An instance of the AbstractData class containing the data.
 
     Returns:
         dict: A dictionary containing the evaluation scores for each metric.

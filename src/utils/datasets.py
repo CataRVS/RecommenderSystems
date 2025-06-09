@@ -1,6 +1,6 @@
 import random
 from torch.utils.data import Dataset
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 
 
 class BPRDataset(Dataset):
@@ -12,12 +12,12 @@ class BPRDataset(Dataset):
         user_pos (dict): Mapping from user to set of positive items.
         n_items (int): Total number of items (for negative sampling).
     """
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Initialize the BPRDataset.
 
         Parameters:
-            data (Data): Data instance containing user-item interactions.
+            data (AbstractData): AbstractData instance containing user-item interactions.
         """
         # Store the number of items
         self.n_items = data.get_total_items()

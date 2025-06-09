@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData
 from typing import List
 
 
@@ -8,12 +8,12 @@ class Strategy(ABC):
     Abstract class to define recommendation filtering strategies.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new Strategy instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         self.data = data
 
@@ -36,12 +36,12 @@ class ExcludeSeenStrategy(Strategy):
     Strategy that excludes items already seen by the user.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new ExcludeSeenStrategy instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         # Call the parent constructor
         super().__init__(data)
@@ -73,12 +73,12 @@ class NoFilteringStrategy(Strategy):
     Strategy that does not apply any filtering.
     """
 
-    def __init__(self, data: Data):
+    def __init__(self, data: AbstractData):
         """
         Create a new NoStrategy instance.
 
         Parameters:
-            data (Data): Data instance with the user-item interactions.
+            data (AbstractData): AbstractData instance with the user-item interactions.
         """
         # Call the parent constructor
         super().__init__(data)

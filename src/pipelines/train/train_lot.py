@@ -12,7 +12,7 @@ grid search for the specified model.
 BASE_CMD = [
     "python", "-m", "src.main.main_recommend",
     "--n_items_to_recommend", "5",
-    "--save_path", "results/recommendations/"
+    "--save_path", "results/recommendations/NewYork_10",
 ]
 
 
@@ -60,7 +60,7 @@ def run_grid_search(model: str):
         # "--reg": [0.1, 0.01],
         # "--n_epochs": [50, 100],
         # "--batch_size": [2048, 4096]
-        "--n_factors": [264],
+        "--n_factors": [256, 512],
         "--lr": [0.01, 0.005],
         "--reg": [0.1, 0.01],
         "--n_epochs": [100],
@@ -68,7 +68,7 @@ def run_grid_search(model: str):
     }
 
     if model == "mlp":
-        param_grid["--hidden_dims"] = [(64, 32), (128, 64), (256, 128)]
+        param_grid["--hidden_dims"] = [(128, 64), (256, 128)]
 
     if model == "gnn":
         param_grid["--n_layers"] = [2, 3]
@@ -95,26 +95,27 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Choose a model between:
     # "popularity" "random" "knn_user" "knn_item" "mf" "bprmf" "mlp" "gnn"
-    model = "gnn"
+    model = "mlp"
 
-    # Path to the training data
+    # Choose a strategy between:
+    # "exclude_seen" "no_filtering"
+    strategy = "no_filtering"
+
+    # Info for the data
     data_path = "data/dataset/train.txt"
     sep = "\t"
-    data_path = "data/ml-100k/u1.base"
-
     test_file = True
 
     # For my use:
-    train_path = "data/ml-100k/u1.base"  # Path to the training data file
+    data_path = "data/ml-100k/u1.base"  # Path to the training data file
     test_file = True
-    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test
-    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
-    # test_file = False  # "none" or provide a path to a test file
+    data_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
+    test_file = False
 
     if test_file:
-        data_path = "data/dataset/test.txt"
+        test_path = "data/dataset/test.txt"
         # For my use:
-        data_path = "data/ml-100k/u1.base"
+        test_path = "data/ml-100k/u1.base"
         BASE_CMD.append("--data_path_test")
         BASE_CMD.append(test_path)
     else:

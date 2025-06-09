@@ -1,11 +1,11 @@
 import argparse
 import pandas as pd
 import src.evaluation.evaluation as ev
-from src.datamodule.data import Data
+from src.datamodule.data import AbstractData, Data
 from src.utils.utils import set_seed
 
 
-def load_evaluation_metric(evaluation_name: str, data: Data) -> ev.Evaluation:
+def load_evaluation_metric(evaluation_name: str, data: AbstractData) -> ev.Evaluation:
     """
     Load the evaluation metric based on the provided name. Available metrics are:
     - precision
@@ -18,7 +18,7 @@ def load_evaluation_metric(evaluation_name: str, data: Data) -> ev.Evaluation:
 
     Parameters:
         evaluation_name (str): Name of the evaluation metric.
-        data (Data): Data object containing user-item interactions.
+        data (AbstractData): Data object containing user-item interactions.
 
     Returns:
         Evaluation: Instance of the evaluation metric class.
@@ -49,7 +49,7 @@ def evaluate_recommendations(
     data_path_recommendations: str,
     recommendations_sep: str,
     ignore_first_line_recs: bool,
-    data: Data
+    data: AbstractData
 ):
     """
     Evaluate the recommendations using the specified evaluation metric.
@@ -59,7 +59,7 @@ def evaluate_recommendations(
         data_path_recommendations (str): Path to the recommendations file.
         recommendations_sep (str): Separator used in the recommendations file.
         ignore_first_line_recs (bool): Whether to ignore the first line of the recommendations file.
-        data (Data): Data object containing user-item interactions.
+        data (AbstractData): Data object containing user-item interactions.
     """
     # Load the evaluation metric
     evaluator = load_evaluation_metric(evaluation_name, data)
