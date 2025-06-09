@@ -73,7 +73,6 @@ def plot_precision_vs_diversity(df: pd.DataFrame, graphs_path: str):
     plt.savefig(os.path.join(graphs_path, 'precision_vs_diversity.png'))
 
 
-
 def plot_knn_precision_by_k(df: pd.DataFrame, graphs_path: str):
     """
     Plot KNN precision as a function of k and similarity type.
@@ -83,17 +82,21 @@ def plot_knn_precision_by_k(df: pd.DataFrame, graphs_path: str):
             'k', 'similarity', and 'precision' columns.
         graphs_path (str): Path to save the generated plots.
     """
-    knn = df[df['recommender'].str.contains('knn')]
-    if knn.empty:
+    df_knn = df[df['recommender'].str.contains('knn')]
+    if df_knn.empty:
         print("No KNN data found in the DataFrame.")
         return
-    knn.sort_values(by='precision', ascending=False, inplace=True)
-    print(knn[['recommender', 'k', 'similarity', 'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity']])
-    knn = knn[['recommender', 'k', 'similarity', 'precision']]
+    df_knn = df_knn.sort_values(by='precision', ascending=False)
+    print("\nKNN results:")
+    print(df_knn[[
+        'recommender', 'k', 'similarity', 'precision', 'recall', 'ndcg', 'epc', 'gini',
+        'aggregate_diversity'
+    ]])
+    df_knn = df_knn[['recommender', 'k', 'similarity', 'precision']]
 
     # Plot them all together
     plt.figure(figsize=(10, 6))
-    for (recommender, similarity), group in knn.groupby(['recommender', 'similarity']):
+    for (recommender, similarity), group in df_knn.groupby(['recommender', 'similarity']):
         sns.lineplot(
             data=group, x='k', y='precision', label=f"{recommender} - {similarity}", marker='o'
         )
@@ -115,8 +118,15 @@ def plot_bprmf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
             'n_factors', and 'precision' columns.
     """
     df_bprmf = df[df['recommender'] == 'bprmf']
-    df_bprmf.sort_values(by='precision', ascending=False, inplace=True)
-    print(df_bprmf.head(10)[['recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size', 'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity']])
+    if df_bprmf.empty:
+        print("No BPRMF data found in the DataFrame.")
+        return
+    df_bprmf = df_bprmf.sort_values(by='precision', ascending=False)
+    print("\nTop 5 BPRMF configurations based on precision:")
+    print(df_bprmf.head(5)[[
+        'recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size',
+        'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity',
+    ]])
     if 'n_factors' not in df_bprmf.columns:
         print("n_factors column is missing in BPRMF data.")
         return
@@ -143,12 +153,19 @@ def plot_mf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
             'n_factors', and 'precision' columns.
     """
     df_mf = df[df['recommender'] == 'mf']
-    if 'n_factors' not in df_mf.columns:
+    if df_mf.empty:
+        print("No MF data found in the DataFrame.")
+        return
+    elif 'n_factors' not in df_mf.columns:
         print("n_factors column is missing in MF data.")
         return
 
-    df_mf.sort_values(by='precision', ascending=False, inplace=True)
-    print(df_mf.head(10)[['recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size', 'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity']])
+    df_mf = df_mf.sort_values(by='precision', ascending=False)
+    print("\nTop 5 MF configurations based on precision:")
+    print(df_mf.head(5)[[
+        'recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size',
+        'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity'
+    ]])
 
     plt.figure(figsize=(6, 4))
     sns.lineplot(data=df_mf, x='n_factors', y='precision', marker='o')
@@ -160,19 +177,68 @@ def plot_mf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
     plt.savefig(os.path.join(graphs_path, 'mf_precision_by_factors.png'))
 
 
-def plot_best_total(df: pd.DataFrame, graphs_path: str):
-    df_best = pd.DataFrame()
-    df_best["precision"] = df.groupby("recommender")["precision"].max()
-    df_best["recall"] = df.groupby("recommender")["recall"].max()
-    df_best["ndcg"] = df.groupby("recommender")["ndcg"].max()
-    df_best["epc"] = df.groupby("recommender")["epc"].max()
-    df_best["gini"] = df.groupby("recommender")["gini"].min()
-    df_best["aggregate_diversity"] = df.groupby("recommender")["aggregate_diversity"].max()
+def show_mlp_parameters(df: pd.DataFrame):
+    """
+    Show top 5 MLP configurations based on precision.
 
-    print(df_best)
+    Parameters:
+        df (pd.DataFrame): DataFrame containing all evaluation results.
+    """
+    df_mlp = df[df['recommender'] == 'mlp']
+    if df_mlp.empty:
+        print("No MLP data found in the DataFrame.")
+        return
+
+    df_mlp = df_mlp.sort_values(by='precision', ascending=False)
+    print("\nTop 5 MLP configurations based on precision:")
+    print(df_mlp.head(5)[[
+        'recommender', 'n_factors', 'regularization', 'learning_rate', 'hidden_dims', 'epochs',
+        'batch_size', 'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity'
+    ]])
+
+
+def show_gnn_parameters(df: pd.DataFrame):
+    """
+    Show top 5 GNN configurations based on precision.
+
+    Parameters:
+        df (pd.DataFrame): DataFrame containing all evaluation results.
+    """
+    df_gnn = df[df['recommender'] == 'gnn']
+    if df_gnn.empty:
+        print("No GNN data found in the DataFrame.")
+        return
+
+    df_gnn = df_gnn.sort_values(by='precision', ascending=False)
+    print("\nTop 5 GNN configurations based on precision:")
+    print(df_gnn.head(5)[[
+        'recommender', 'n_factors', 'regularization', 'learning_rate', 'n_layers', 'epochs',
+        'batch_size', 'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity'
+    ]])
+
+
+def plot_best_total(df: pd.DataFrame, graphs_path: str):
+    """
+    Plot and show best evaluation results for each recommender.
+
+    Parameters:
+        df (pd.DataFrame): DataFrame containing evaluation results with 'recommender',
+            'precision', 'recall', 'ndcg', 'epc', 'gini', and 'aggregate_diversity' columns.
+        graphs_path (str): Path to save the generated plots.
+    """
+    idx = df.groupby("recommender")["precision"].idxmax()
+    df_best = df.loc[idx].set_index("recommender")
+
+    if df_best.empty:
+        print("No best results found in the DataFrame.")
+        return
+
+    metrics = ["precision", "recall", "ndcg", "epc", "gini", "aggregate_diversity"]
+
+    print("\nBest results for each recommender:")
+    print(df_best[metrics])
 
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    metrics = df_best.columns
     recommenders = df_best.index
 
     for ax, metric in zip(axes.flatten(), metrics):
@@ -181,7 +247,7 @@ def plot_best_total(df: pd.DataFrame, graphs_path: str):
         ax.set_ylabel(metric.capitalize())
         ax.grid(axis='y', linestyle='--', alpha=0.5)
 
-    plt.suptitle("Best Evaluation Results for Recommenders", fontsize=16)
+    plt.suptitle("Best Precision Results for Recommenders", fontsize=16)
     plt.tight_layout()
     plt.savefig(os.path.join(graphs_path, "best_results.png"))
 
@@ -199,10 +265,11 @@ def main(metrics_path: str, graphs_path: str):
     # Ensure the output directory exists
     os.makedirs(graphs_path, exist_ok=True)
 
-    # plot_precision_vs_diversity(df_all, graphs_path)
     plot_knn_precision_by_k(df_all, graphs_path)
     plot_bprmf_precision_by_factors(df_all, graphs_path)
     plot_mf_precision_by_factors(df_all, graphs_path)
+    show_mlp_parameters(df_all)
+    show_gnn_parameters(df_all)
     plot_best_total(df_all, graphs_path)
 
 

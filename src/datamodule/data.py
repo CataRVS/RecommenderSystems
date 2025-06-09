@@ -246,6 +246,7 @@ class Data(AbstractData):
         Raises:
             FileNotFoundError: If the dataset is not found.
             pd.errors.ParserError: If there is an error parsing the dataset.
+            ValueError: If the data is not in the expected format.
         """
         # Initialize attributes
         self._total_users: int = 0
@@ -297,6 +298,11 @@ class Data(AbstractData):
         except pd.errors.ParserError:
             raise pd.errors.ParserError(
                 "Error parsing the file. Please check the file format and try again."
+            )
+
+        except ValueError:
+            raise ValueError(
+                "Data is not in the expected format. Please check the data and try again."
             )
 
     def _divide_data(

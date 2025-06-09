@@ -59,6 +59,9 @@ def load_data(
     except pd.errors.ParserError as e:
         print(e)
         exit(1)
+    except ValueError as e:
+        print(e)
+        exit(1)
 
 
 def load_evaluation_metric(metric_name: str, data: Data) -> ev.Evaluation:
@@ -137,7 +140,6 @@ def parse_filename(filename: str) -> Tuple[str, str, Dict[str, Any], str]:
         reg = float(parts[7][3:].replace("p", "."))
         epochs = int(parts[8][2:])
         batch_size = int(parts[9][2:])
-        dropout = float(parts[10][4:].replace("p", "."))
         params = {
             "n_factors": n_factors,
             "learning_rate": lr,
@@ -145,9 +147,10 @@ def parse_filename(filename: str) -> Tuple[str, str, Dict[str, Any], str]:
             "regularization": reg,
             "epochs": epochs,
             "batch_size": batch_size,
-            "dropout": dropout,
         }
-        config = f"f{n_factors}_lr{lr}_hd{'-'.join(map(str, hidden_dims))}_reg{reg}_ep{epochs}_bs{batch_size}"
+        config = (
+            f"f{n_factors}_lr{lr}_hd{'-'.join(map(str, hidden_dims))}_reg{reg}_ep{epochs}_bs{batch_size}"
+        )
 
     elif base.startswith("gnn"):
         recommender = parts[0]
@@ -353,7 +356,7 @@ if __name__ == "__main__":
 
     # For my use:
     train_path = "data/ml-100k/u1.base"  # Path to the training data file
-    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test 
+    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test
     # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"  # Path to the training data file
     # test_path = "none"  # "none" or provide a path to a test file
     test_size = 0.1

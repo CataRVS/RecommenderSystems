@@ -16,7 +16,7 @@ class MLPRecommender(Recommender):
     Architecture:
         - user embedding of size [n_users, embedding_dim]
         - item embedding of size [n_items, embedding_dim]
-        - MLP: linear -> ReLU -> dropout -> ... -> linear -> output
+        - MLP: linear -> ReLU -> ... -> linear -> output
     Trained with MSE loss on observed ratings.
 
     Args:
@@ -28,7 +28,6 @@ class MLPRecommender(Recommender):
         n_epochs (int): number of training epochs.
         batch_size (int): mini-batch size.
         device (str|None): 'cpu' or 'cuda', or None for auto-detect.
-        dropout (float): dropout probability between layers.
     """
     def __init__(
         self,
@@ -40,7 +39,6 @@ class MLPRecommender(Recommender):
         n_epochs: int = 20,
         batch_size: int = 4096,
         device: str | None = None,
-        dropout: float = 0.5,
     ):
         super().__init__(data)
         # Save dataset and device
@@ -52,7 +50,6 @@ class MLPRecommender(Recommender):
         n_items = data.get_total_items()
         self.embedding_dim = embedding_dim
         self.hidden_dims = hidden_dims
-        self.dropout = dropout
 
         # Embedding layers
         self.user_embedding = nn.Embedding(n_users, embedding_dim)
@@ -66,7 +63,6 @@ class MLPRecommender(Recommender):
         for h in hidden_dims:
             layers.append(nn.Linear(input_dim, h))
             layers.append(nn.ReLU())
-            layers.append(nn.Dropout(self.dropout))
             input_dim = h
         layers.append(nn.Linear(input_dim, 1))  # final score
         self.mlp = nn.Sequential(*layers)
@@ -78,9 +74,9 @@ class MLPRecommender(Recommender):
 
         # Optimizer and loss
         self.optimizer = torch.optim.AdamW(
-            list(self.user_embedding.parameters()) + 
-            list(self.item_embedding.parameters()) + 
-            list(self.mlp.parameters()),
+            list(self.user_embedding.parameters())
+            + list(self.item_embedding.parameters())
+            + list(self.mlp.parameters()),
             lr=lr,
             weight_decay=weight_decay
         )
@@ -203,19 +199,11 @@ class MLPRecommender(Recommender):
         return recommendation
 
 
-
 class GNNRecommender(Recommender):
     """
-    LightGCN-style GNN Recommender:
+    Graph Neural Network Recommender using a GCN on user and item embeddings.
 
-    - Initialize user & item embeddings.
-    - Build normalized bipartite adjacency from train interactions.
-    - In each epoch, propagate embeddings through K graph layers:
-        E⁽⁰⁾ = [U; V]
-        E⁽ˡ⁾ = Â · E⁽ˡ⁻¹⁾
-      where Â is symmetrically normalized A.
-    - Final embedding E* = (1/(K+1)) * Σₗ₌₀ᵏ E⁽ˡ⁾.
-    - Predict ratings via dot(u*, v*), train with MSELoss.
+    At
     """
     def __init__(
         self,
@@ -251,15 +239,17 @@ class GNNRecommender(Recommender):
         idx = torch.stack([rows, cols], dim=0)
         # compute symmetric degree
         deg = np.bincount(idx[0].cpu().numpy(), minlength=self.n_nodes)
-        deg_inv_sqrt = torch.tensor(1.0/np.sqrt(deg+1e-12), dtype=torch.float32)
+        deg_inv_sqrt = torch.tensor(1.0 / np.sqrt(deg + 1e-12), dtype=torch.float32)
         # edge weights = 1/sqrt(deg[u]*deg[v])
         vals = deg_inv_sqrt[idx[0]] * deg_inv_sqrt[idx[1]]
-        self.adj = torch.sparse.FloatTensor(idx, vals, (self.n_nodes, self.n_nodes)).coalesce().to(self.device)
+        self.adj = torch.sparse_coo_tensor(
+            idx, vals, (self.n_nodes, self.n_nodes)
+        ).coalesce().to(self.device)
 
         # 3) Optimizer & loss
         self.optimizer = torch.optim.AdamW(
-            list(self.user_embedding.parameters()) +
-            list(self.item_embedding.parameters()),
+            list(self.user_embedding.parameters())
+            + list(self.item_embedding.parameters()),
             lr=lr, weight_decay=weight_decay
         )
         self.criterion = nn.MSELoss()
@@ -293,7 +283,7 @@ class GNNRecommender(Recommender):
         self.user_embedding.train()
         self.item_embedding.train()
 
-        for epoch in range(1, self.n_epochs+1):
+        for epoch in range(1, self.n_epochs + 1):
             epoch_loss = 0.0
             count = 0
 
@@ -355,7 +345,7 @@ class GNNRecommender(Recommender):
         scores = np.dot(v_embs, u_emb)   # [M]
 
         top_k = min(n, len(scores))
-        top_idx = np.argpartition(-scores, top_k-1)[:top_k]
+        top_idx = np.argpartition(-scores, top_k - 1)[:top_k]
         top_sorted = top_idx[np.argsort(-scores[top_idx])]
 
         recs = [(items[i], float(scores[i])) for i in top_sorted]

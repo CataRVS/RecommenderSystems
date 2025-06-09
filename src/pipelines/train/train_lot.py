@@ -69,7 +69,6 @@ def run_grid_search(model: str):
 
     if model == "mlp":
         param_grid["--hidden_dims"] = [(64, 32), (128, 64), (256, 128)]
-        param_grid["--dropout"] = [0.1, 0.2]
 
     if model == "gnn":
         param_grid["--n_layers"] = [2, 3]
@@ -108,8 +107,8 @@ if __name__ == "__main__":
     # For my use:
     train_path = "data/ml-100k/u1.base"  # Path to the training data file
     test_file = True
-    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test 
-    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"  # Path to the training data file
+    test_path = "data/ml-100k/u1.test"  # "none" or provide a path to a test
+    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
     # test_file = False  # "none" or provide a path to a test file
 
     if test_file:

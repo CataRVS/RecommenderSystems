@@ -190,6 +190,9 @@ def main():
     except pd.errors.ParserError as e:
         print(e)
         exit(1)
+    except ValueError as e:
+        print(e)
+        exit(1)
 
     # Evaluate the recommendations
     evaluate_recommendations(

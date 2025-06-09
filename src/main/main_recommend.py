@@ -27,7 +27,6 @@ def load_recommender(
     batch_size: int = 4096,
     device: str | None = None,
     hidden_dims: list[int] = [64, 32],
-    dropout: float = 0.5,
     n_layers: int = 2,
 ) -> rec.Recommender:
     """
@@ -55,7 +54,6 @@ def load_recommender(
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
-        dropout (float): Dropout probability for the MLP recommender.
         n_layers (int): Number of layers for the GNN recommender.
 
     Returns:
@@ -108,7 +106,6 @@ def load_recommender(
             n_epochs=n_epochs,
             batch_size=batch_size,
             device=device,
-            dropout=dropout,
         )
     elif recommender_name == "gnn":
         recommender = nn.GNNRecommender(
@@ -204,7 +201,6 @@ def generate_recommendations(
     batch_size: int = 4096,
     device: str | None = None,
     hidden_dims: list[int] = [64, 32],
-    dropout: float = 0.5,
     n_layers: int = 2,
 ) -> Recommendation:
     """
@@ -225,7 +221,6 @@ def generate_recommendations(
         batch_size (int): Batch size for matrix factorization.
         device (str | None): Device to use for matrix factorization (e.g., "cuda", "cpu").
         hidden_dims (list[int]): Hidden dimensions for the MLP recommender.
-        dropout (float): Dropout probability for the MLP recommender.
         n_layers (int): Number of layers for the GNN recommender.
 
     Returns:
@@ -245,7 +240,6 @@ def generate_recommendations(
         batch_size=batch_size,
         device=device,
         hidden_dims=hidden_dims,
-        dropout=dropout,
         n_layers=n_layers,
     )
 
@@ -285,7 +279,6 @@ def create_name(
     n_epochs: int | None = None,
     batch_size: int | None = None,
     hidden_dims: list[int] | None = None,
-    dropout: float | None = None,
     n_layers: int | None = None,
 ) -> str:
     """
@@ -304,7 +297,6 @@ def create_name(
         n_epochs (int | None): Number of epochs for matrix factorization.
         batch_size (int | None): Batch size for matrix factorization.
         hidden_dims (list[int] | None): Hidden dimensions for the MLP recommender.
-        dropout (float | None): Dropout probability for the MLP recommender.
         n_layers (int | None): Number of layers for the GNN recommender.
 
     Returns:
@@ -344,7 +336,6 @@ def create_name(
             f"reg{str(reg).replace('.', 'p')}",
             f"ep{n_epochs}",
             f"bs{batch_size}",
-            f"drop{str(dropout).replace('.', 'p')}",
         ])
 
     elif recommender_name == "gnn":
@@ -522,14 +513,6 @@ def main():
         required=False,
         default=[64, 32],
     )
-    # Add the dropout argument for the MLP recommender
-    parser.add_argument(
-        "--dropout",
-        type=float,
-        help="Dropout probability for the MLP recommender",
-        required=False,
-        default=0.5,
-    )
 
     # GNN Arguments
     # Add the number of layers argument for the GNN recommender
@@ -579,6 +562,9 @@ def main():
     except pd.errors.ParserError as e:
         print(e)
         exit(1)
+    except ValueError as e:
+        print(e)
+        exit(1)
 
     # Generate recommendations
     recommendations = generate_recommendations(
@@ -596,7 +582,6 @@ def main():
         batch_size=args.batch_size,
         device=args.device,
         hidden_dims=args.hidden_dims,
-        dropout=args.dropout,
         n_layers=args.n_layers,
     )
 
@@ -613,7 +598,6 @@ def main():
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         hidden_dims=args.hidden_dims,
-        dropout=args.dropout,
         n_layers=args.n_layers,
     )
 
