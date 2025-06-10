@@ -1,12 +1,12 @@
 # RecommenderSystems
 
 ## Project Description
+This project implements a modular Python library for building, training, and evaluating recommendation systems. It includes models ranging from simple approaches like popularity and k-NN to advanced techniques such as matrix factorization, MLP, and Graph Neural Networks (GNNs).
 
-
-## Installation guide
+The library allows these models to be applied to various user-item datasets, supports automated evaluations using multiple metrics (accuracy, novelty, diversity), and enables performance comparison across recommendation systems.
 
 ## Usage guide
-### Dowload the project
+### Download the project
 1. Clone the repository:
 ```bash
 git clone https://github.com/CataRVS/RecommenderSystems.git
@@ -24,9 +24,30 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```
 
 ### Generate recommendations
-To generate recommendatios, you have the following options:
+To generate recommendations, you have the following options:
 - Run the `main_recommend.py` script contained in the `src/main` folder with the desired arguments:
+```bash
+python -m src.main.main_recommend **kwargs
+```
+
 - Run the `train_lot.py` script contained in the `src/pipelines/train` folder after changing the indicated parameters in the file.
 ```bash
-python -m src.main.main_recommen data/ml-100k/u.data
+python -m src.pipelines.train.train_lot data/ml-100k/u.data
+```
+
+### Evaluate recommendations
+To evaluate recommendations, you have the following options:
+- Run the `main_evaluate.py` script contained in the `src/main` folder with the desired arguments:
+```bash
+python -m src.main.main_evaluate **kwargs
+```
+- Run the `evaluate_lot.py` script contained in the `src/pipelines/evaluate` folder after changing the indicated parameters in the file.
+```bash
+python -m src.pipelines.evaluate.evaluate_lot data/ml-100k/u.data
+```
+
+### Generate tables and plots
+To generate tables and plots, you can run the following script after changing the indicated parameters in the file:
+```bash
+python -m src.pipelines.evaluate.plot_lot
 ```
