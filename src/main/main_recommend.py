@@ -421,14 +421,6 @@ def main():
         required=False,
         default=False,
     )
-    # Add the column names argument
-    parser.add_argument(
-        "--col_names",
-        type=list,
-        help="Column names for the data file",
-        required=False,
-        default=["user", "item", "rating", "timestamp"],
-    )
 
     # KNN Arguments
     # Add the k argument for KNN recommenders

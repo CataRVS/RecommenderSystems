@@ -73,108 +73,65 @@ def plot_precision_vs_diversity(df: pd.DataFrame, graphs_path: str):
     plt.savefig(os.path.join(graphs_path, 'precision_vs_diversity.png'))
 
 
-def plot_knn_precision_by_k(df: pd.DataFrame, graphs_path: str):
+def plot_precision_comparison(df: pd.DataFrame, graphs_path: str):
     """
-    Plot KNN precision as a function of k and similarity type.
+    Generate a comparison plot with subplots for KNN, BPRMF, and MF recommenders,
+    each showing precision as a function of their respective key parameter:
+    - KNN: precision by number of neighbors (k) and similarity type.
+    - BPRMF: precision by number of latent factors.
+    - MF: precision by number of latent factors.
 
     Parameters:
-        df (pd.DataFrame): DataFrame containing evaluation results with 'recommender',
-            'k', 'similarity', and 'precision' columns.
-        graphs_path (str): Path to save the generated plots.
+        df (pd.DataFrame): DataFrame containing evaluation results.
+        graphs_path (str): Path to save the generated plot image.
     """
+    fig, axes = plt.subplots(1, 3, figsize=(16, 6))
+
+    # --- KNN Subplot ---
     df_knn = df[df['recommender'].str.contains('knn')]
-    if df_knn.empty:
-        print("No KNN data found in the DataFrame.")
-        return
-    df_knn = df_knn.sort_values(by='precision', ascending=False)
-    print("\nKNN results:")
-    print(df_knn[[
-        'recommender', 'k', 'similarity', 'precision', 'recall', 'ndcg', 'epc', 'gini',
-        'aggregate_diversity'
-    ]])
-    df_knn = df_knn[['recommender', 'k', 'similarity', 'precision']]
+    if not df_knn.empty:
+        df_knn = df_knn.sort_values(by='precision', ascending=False)
+        for (recommender, similarity), group in df_knn.groupby(['recommender', 'similarity']):
+            sns.lineplot(
+                data=group,
+                x='k', y='precision', label=f"{recommender} - {similarity}", marker='o',
+                ax=axes[0]
+            )
+        axes[0].set_title('KNN: Precision by k and Similarity')
+        axes[0].set_xlabel('k')
+        axes[0].set_ylabel('Precision')
+        axes[0].legend(title='Recommender - Similarity', loc='center right', bbox_to_anchor=(1.0, 0.6))
+        axes[0].grid(axis='y', linestyle='--', alpha=0.5)
+    else:
+        axes[0].set_title('KNN: No Data Available')
 
-    # Plot them all together
-    plt.figure(figsize=(10, 6))
-    for (recommender, similarity), group in df_knn.groupby(['recommender', 'similarity']):
-        sns.lineplot(
-            data=group, x='k', y='precision', label=f"{recommender} - {similarity}", marker='o'
-        )
-    plt.title('KNN: Precision by k and Similarity Type')
-    plt.xlabel('k')
-    plt.ylabel('Precision')
-    plt.legend(title='Recommender - Similarity')
-    plt.tight_layout()
-    plt.grid(axis='y', linestyle='--', alpha=0.5)
-    plt.savefig(os.path.join(graphs_path, 'knn_precision_by_k.png'))
-
-
-def plot_bprmf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
-    """
-    Plot BPRMF precision as a function of the number of latent factors.
-
-    Parameters:
-        df (pd.DataFrame): DataFrame containing evaluation results with 'recommender',
-            'n_factors', and 'precision' columns.
-    """
-    df_bprmf = df[df['recommender'] == 'bprmf']
-    if df_bprmf.empty:
-        print("No BPRMF data found in the DataFrame.")
-        return
-    df_bprmf = df_bprmf.sort_values(by='precision', ascending=False)
-    print("\nTop 5 BPRMF configurations based on precision:")
-    print(df_bprmf.head(5)[[
-        'recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size',
-        'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity',
-    ]])
-    if 'n_factors' not in df_bprmf.columns:
-        print("n_factors column is missing in BPRMF data.")
-        return
-    try:
-        plt.figure(figsize=(10, 6))
-        sns.lineplot(data=df_bprmf, x='n_factors', y='precision', marker='o')
-        plt.title('BPRMF: Precision by Number of Latent Factors')
-        plt.xlabel('Number of Factors')
-        plt.ylabel('Precision')
-        plt.tight_layout()
-        plt.grid(axis='y', linestyle='--', alpha=0.5)
-        plt.savefig(os.path.join(graphs_path, 'bprmf_precision_by_factors.png'))
-    except KeyError and ValueError:
-        print("n_factors column is missing in BPRMF data or contains invalid values.")
-        return
-
-
-def plot_mf_precision_by_factors(df: pd.DataFrame, graphs_path: str):
-    """
-    Plot MF precision as a function of the number of latent factors.
-
-    Parameters:
-        df (pd.DataFrame): DataFrame containing evaluation results with 'recommender',
-            'n_factors', and 'precision' columns.
-    """
+    # --- MF Subplot ---
     df_mf = df[df['recommender'] == 'mf']
-    if df_mf.empty:
-        print("No MF data found in the DataFrame.")
-        return
-    elif 'n_factors' not in df_mf.columns:
-        print("n_factors column is missing in MF data.")
-        return
+    if not df_mf.empty and 'n_factors' in df_mf.columns:
+        df_mf = df_mf.sort_values(by='precision', ascending=False)
+        sns.lineplot(data=df_mf, x='n_factors', y='precision', marker='o', ax=axes[1])
+        axes[1].set_title('MF: Precision by Number of Factors')
+        axes[1].set_xlabel('Number of Factors')
+        axes[1].set_ylabel('Precision')
+        axes[1].grid(axis='y', linestyle='--', alpha=0.5)
+    else:
+        axes[1].set_title('MF: No Data Available or Missing n_factors')
 
-    df_mf = df_mf.sort_values(by='precision', ascending=False)
-    print("\nTop 5 MF configurations based on precision:")
-    print(df_mf.head(5)[[
-        'recommender', 'n_factors', 'regularization', 'learning_rate', 'epochs', 'batch_size',
-        'precision', 'recall', 'ndcg', 'epc', 'gini', 'aggregate_diversity'
-    ]])
+    # --- BPRMF Subplot ---
+    df_bprmf = df[df['recommender'] == 'bprmf']
+    if not df_bprmf.empty and 'n_factors' in df_bprmf.columns:
+        df_bprmf = df_bprmf.sort_values(by='precision', ascending=False)
+        sns.lineplot(data=df_bprmf, x='n_factors', y='precision', marker='o', ax=axes[2])
+        axes[2].set_title('BPRMF: Precision by Number of Factors')
+        axes[2].set_xlabel('Number of Factors')
+        axes[2].set_ylabel('Precision')
+        axes[2].grid(axis='y', linestyle='--', alpha=0.5)
+    else:
+        axes[2].set_title('BPRMF: No Data Available or Missing n_factors')
 
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df_mf, x='n_factors', y='precision', marker='o')
-    plt.title('MF: Precision by Number of Latent Factors')
-    plt.xlabel('Number of Factors')
-    plt.ylabel('Precision')
     plt.tight_layout()
-    plt.grid(axis='y', linestyle='--', alpha=0.5)
-    plt.savefig(os.path.join(graphs_path, 'mf_precision_by_factors.png'))
+    plt.savefig(os.path.join(graphs_path, 'precision_comparison.png'))
+    plt.close()
 
 
 def show_mlp_parameters(df: pd.DataFrame):
@@ -265,9 +222,7 @@ def main(metrics_path: str, graphs_path: str):
     # Ensure the output directory exists
     os.makedirs(graphs_path, exist_ok=True)
 
-    plot_knn_precision_by_k(df_all, graphs_path)
-    plot_bprmf_precision_by_factors(df_all, graphs_path)
-    plot_mf_precision_by_factors(df_all, graphs_path)
+    plot_precision_comparison(df_all, graphs_path)
     show_mlp_parameters(df_all)
     show_gnn_parameters(df_all)
     plot_best_total(df_all, graphs_path)
@@ -277,6 +232,6 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     metrics_path = "results/metrics/NewYork"
     graphs_path = "results/graphs/NewYork"
-    # metrics_path = "results/metrics/ml-100k"
-    # graphs_path = "results/graphs/ml-100k"
+    metrics_path = "results/metrics/ml-100k"
+    graphs_path = "results/graphs/ml-100k"
     main(metrics_path, graphs_path)

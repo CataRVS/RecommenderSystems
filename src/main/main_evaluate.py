@@ -152,14 +152,6 @@ def main():
         required=False,
         default=False,
     )
-    # Add the data columns names argument
-    parser.add_argument(
-        "--col_names",
-        type=list,
-        help="Column names for the data file",
-        required=False,
-        default=["user", "item", "rating", "timestamp"],
-    )
     # Add the random seed argument
     parser.add_argument(
         "--seed",
