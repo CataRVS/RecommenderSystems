@@ -89,9 +89,13 @@ class MLPRecommender(Recommender):
                 batch_size=batch_size
             )
 
-    def _train(self, n_epochs: int, batch_size: int):
+    def _train(self, n_epochs: int, batch_size: int) -> tuple[np.ndarray, np.ndarray, nn.Module]:
         """
         Train the MLP on observed (user, item, rating) tuples.
+
+        Parameters:
+            n_epochs (int): number of training epochs.
+            batch_size (int): mini-batch size for training.
 
         Returns:
             user_embedding_np (np.ndarray): [n_users, embedding_dim]
@@ -155,9 +159,6 @@ class MLPRecommender(Recommender):
         recommendation: Recommendation | None = None,
         n: int = 10
     ) -> Recommendation:
-        """
-        Generate top-n recommendations for a given user via the trained MLP.
-        """
         if recommendation is None:
             recommendation = Recommendation()
 
@@ -203,7 +204,13 @@ class GNNRecommender(Recommender):
     """
     Graph Neural Network Recommender using a GCN on user and item embeddings.
 
-    At
+    Attributes:
+        data (AbstractData): instance holding train/test splits and mappings.
+        embedding_dim (int): dimension of user/item embeddings.
+        lr (float): learning rate for AdamW optimizer.
+        weight_decay (float): L2 regularization coefficient.
+        n_epochs (int): number of training epochs.
+        batch_size (int): mini-batch size.
     """
     def __init__(
         self,
@@ -258,7 +265,16 @@ class GNNRecommender(Recommender):
         self.user_final, self.item_final = self._train()
 
     def _propagate(self, all_embeddings: torch.Tensor) -> torch.Tensor:
-        """Propagate through K GCN layers and average."""
+        """
+        Propagate through K GCN layers and average.
+        
+        Parameters:
+            all_embeddings (torch.Tensor): initial embeddings of shape [N, D],
+                where N = n_users + n_items, D = embedding_dim.
+
+        Returns:
+            torch.Tensor: final embeddings after K layers, shape [N, D].
+        """
         all_embeddings = all_embeddings.to(self.device)  # [N, D]
         embeds = [all_embeddings]
         h = all_embeddings
@@ -269,7 +285,14 @@ class GNNRecommender(Recommender):
         # mean of [E⁽⁰⁾…E⁽ᴷ⁾]
         return torch.stack(embeds, dim=1).mean(dim=1)
 
-    def _train(self):
+    def _train(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Train the GNN on observed (user, item, rating) tuples.
+
+        Returns:
+            tuple: (user_final, item_final) where each is a numpy array of shape
+            [n_users, embedding_dim] and [n_items, embedding_dim] respectively.
+        """
         # prepare training data
         users_data, items_data, ratings_data = self.data.get_interactions()
         users = torch.tensor(users_data, dtype=torch.long)
