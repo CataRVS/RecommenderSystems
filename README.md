@@ -68,7 +68,7 @@ python -m src.main.main_recommend --recommender knn_user --data_path_train data/
 | `--threshold`            | Threshold for KNN recommenders.                                                                        | `1.0`                      |
 | `--similarity`           | Similarity metric for KNN recommenders: `cosine` or `pearson`.                                         | `pearson`                  |
 | `--n_factors`            | Latent dimension for embeddings (MF/BPRMF/MLP/GNN).                                                    | `20`                       |
-| `--lr`                   | Learning rate (MF/BPRMF/GNN).                                                                          | `0.01`                     |
+| `--lr`                   | Learning rate (MF/BPRMF/MLP/GNN).                                                                          | `0.01`                     |
 | `--reg`                  | L2 regularization coefficient (MF/BPRMF/MLP/GNN).                                                      | `0.1`                      |
 | `--n_epochs`             | Number of training epochs (MF/BPRMF/MLP/GNN).                                                          | `10`                       |
 | `--batch_size`           | Mini-batch size (MF/BPRMF/MLP/GNN).                                                                    | `4096`                     |
