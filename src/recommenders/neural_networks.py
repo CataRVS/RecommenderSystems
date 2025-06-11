@@ -267,7 +267,7 @@ class GNNRecommender(Recommender):
     def _propagate(self, all_embeddings: torch.Tensor) -> torch.Tensor:
         """
         Propagate through K GCN layers and average.
-        
+
         Parameters:
             all_embeddings (torch.Tensor): initial embeddings of shape [N, D],
                 where N = n_users + n_items, D = embedding_dim.
