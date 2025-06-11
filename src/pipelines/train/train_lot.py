@@ -12,7 +12,7 @@ grid search for the specified model.
 BASE_CMD = [
     "python", "-m", "src.main.main_recommend",
     "--n_items_to_recommend", "5",
-    "--save_path", "results/recommendations/NewYork_10",
+    "--save_path", "results/recommendations/ml-100k_2",
 ]
 
 
@@ -27,7 +27,7 @@ def run_knn_search(model: str):
         raise ValueError("Model must be 'knn_user' or 'knn_item'")
 
     PARAM_GRID = {
-        "--k": [1, 5, 10],
+        "--k": [25, 50, 100],
         "--similarity": ["cosine", "pearson"],
     }
 
@@ -95,11 +95,11 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Choose a model between:
     # "popularity" "random" "knn_user" "knn_item" "mf" "bprmf" "mlp" "gnn"
-    model = "mlp"
+    model = "knn_item"
 
     # Choose a strategy between:
     # "exclude_seen" "no_filtering"
-    strategy = "no_filtering"
+    strategy = "exclude_seen"
 
     # Info for the data
     train_path = "data/dataset/train.txt"
@@ -109,8 +109,8 @@ if __name__ == "__main__":
     # For my use:
     train_path = "data/ml-100k/u1.base"  # Path to the training data file
     test_file = True
-    train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
-    test_file = False
+    # train_path = "data/NewYork/US_NewYork_Processed_Shortened_10.txt"
+    # test_file = False
 
     if test_file:
         test_path = "data/dataset/test.txt"

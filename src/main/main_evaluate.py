@@ -174,7 +174,6 @@ def main():
             sep=args.sep_data,
             test_size=args.test_size,
             ignore_first_line=args.ignore_first_line_data,
-            col_names=args.col_names,
         )
     except FileNotFoundError as e:
         print(e)
