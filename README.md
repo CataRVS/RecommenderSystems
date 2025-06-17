@@ -54,30 +54,30 @@ To train a recommendation model and generate recommendations, use the `main_reco
 python -m src.main.main_recommend --recommender knn_user --data_path_train data/ml-100k/u1.base
 ```
 ##### Available flags:
-| Flag                     | Description                                                                                            | Default Value              |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ | -------------------------- |
-| `--recommender`          | Recommendation algorithm: `popularity`, `random`, `knn_user`, `knn_item`, `mf`, `bprmf`, `gnn`, `mlp`. | **Required**               |
-| `--n_items_to_recommend` | Number of items to recommend per user.                                                                 | `10`                       |
-| `--data_path_train`      | Path to the training data file (CSV/TSV).                                                              | **Required**               |
-| `--data_path_test`       | Path to the test data file or `none` to split randomly.                                                | `none`                     |
-| `--test_size`            | Proportion of data to use for testing (if `data_path_test` is `none`).                                 | `0.2`                      |
-| `--sep`                  | Field separator in the data files.                                                                     | `\t`                       |
-| `--ignore_first_line`    | Ignore the first line of the data files.                                                               | `False`                    |
-| `--strategy`             | Recommendation strategy: `exclude_seen` or `no_filtering`.                                             | `exclude_seen`             |
-| `--k`                    | Number of neighbors for KNN recommenders.                                                              | `5`                        |
-| `--threshold`            | Threshold for KNN recommenders.                                                                        | `1.0`                      |
-| `--similarity`           | Similarity metric for KNN recommenders: `cosine` or `pearson`.                                         | `pearson`                  |
-| `--n_factors`            | Latent dimension for embeddings (MF/BPRMF/MLP/GNN).                                                    | `20`                       |
-| `--lr`                   | Learning rate (MF/BPRMF/MLP/GNN).                                                                          | `0.01`                     |
-| `--reg`                  | L2 regularization coefficient (MF/BPRMF/MLP/GNN).                                                      | `0.1`                      |
-| `--n_epochs`             | Number of training epochs (MF/BPRMF/MLP/GNN).                                                          | `10`                       |
-| `--batch_size`           | Mini-batch size (MF/BPRMF/MLP/GNN).                                                                    | `4096`                     |
-| `--device`               | `cpu` or `cuda` (automatically detected if not specified).                                             | `auto`                     |
-| `--hidden_dims`          | Hidden layer dimensions for MLP, e.g., `64 32`.                                                        | `64 32`                    |
-| `--n_layers`             | Number of convolution layers for GNN.                                                                  | `3`                        |
-| `--seed`                 | Random seed for reproducibility.                                                                       | `42`                       |
-| `--save_path`            | Path to save the generated recommendations.                                                            | `results/recommendations/` |
-
+| Flag                     | Description                                                                                                                      | Default Value              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `--recommender`          | Recommendation algorithm: `popularity`, `random`, `knn_user`, `knn_item`, `mf`, `bprmf`, `gnn`, `mlp`.                           | **Required**               |
+| `--n_items_to_recommend` | Number of items to recommend per user.                                                                                           | `10`                       |
+| `--data_path_train`      | Path to the training data file (CSV/TSV).                                                                                        | **Required**               |
+| `--data_path_test`       | Path to the test data file or `none` to split randomly.                                                                          | `none`                     |
+| `--test_size`            | Proportion of data to use for testing (if `data_path_test` is `none`).                                                           | `0.2`                      |
+| `--sep`                  | Field separator in the data files.                                                                                               | `\t`                       |
+| `--ignore_first_line`    | Ignore the first line of the data files.                                                                                         | `False`                    |
+| `--strategy`             | Recommendation strategy: `exclude_seen` or `no_filtering`.                                                                       | `exclude_seen`             |
+| `--k`                    | Number of neighbors for KNN recommenders.                                                                                        | `5`                        |
+| `--threshold`            | Threshold for KNN recommenders.                                                                                                  | `1.0`                      |
+| `--similarity`           | Similarity metric for KNN recommenders: `cosine` or `pearson`.                                                                   | `pearson`                  |
+| `--n_factors`            | Latent dimension for embeddings (MF/BPRMF/MLP/GNN).                                                                              | `20`                       |
+| `--lr`                   | Learning rate (MF/BPRMF/MLP/GNN).                                                                                                | `0.01`                     |
+| `--reg`                  | L2 regularization coefficient (MF/BPRMF/MLP/GNN).                                                                                | `0.1`                      |
+| `--n_epochs`             | Number of training epochs (MF/BPRMF/MLP/GNN).                                                                                    | `10`                       |
+| `--batch_size`           | Mini-batch size (MF/BPRMF/MLP/GNN).                                                                                              | `4096`                     |
+| `--device`               | `cpu` or `cuda` (automatically detected if not specified).                                                                       | `auto`                     |
+| `--hidden_dims`          | Hidden layer dimensions for MLP, e.g., `64 32`.                                                                                  | `64 32`                    |
+| `--n_layers`             | Number of convolution layers for GNN.                                                                                            | `3`                        |
+| `--seed`                 | Random seed for reproducibility.                                                                                                 | `42`                       |
+| `--save_path`            | Path to save the generated recommendations.                                                                                      | `results/recommendations/` |
+| `--split_strategy`       |Strategy for splitting the data into train and test sets: `random`, `leave_one_last`, `temporal_user`, `temporal_global`, `none`. | `none`                     |
 
 #### Evaluating Recommendations 
 To evaluate the generated recommendations, use the `main_evaluate.py` script. This script allows calculation of metrics such as precision, recall, NDCG, and others. Example usage:
@@ -85,18 +85,19 @@ To evaluate the generated recommendations, use the `main_evaluate.py` script. Th
 python -m src.main.main_evaluate --metric precision --recommendations_path results/recommendations/knn_user.csv --data_path_train data/ml-100k/u1.test
 ```
 ##### Available flags:
-| Flag                       | Description                                                                             | Default Value                             |
-| -------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `--metric`                 | Evaluation metric: `precision`, `recall`, `ndcg`, `epc`, `gini`, `aggregate_diversity`. | **Required**                              |
-| `--recommendations_path`   | Path to the file with generated recommendations.                                        | **Required**                              |
-| `--data_path_train`        | Path to the training data file.                                                         | **Required**                              |
-| `--data_path_test`         | Path to the test data file or `none` to split randomly.                                 | `none`                                    |
-| `--test_size`              | Proportion of data to use for testing (if `data_path_test` is `none`).                  | `0.2`                                     |
-| `--sep_recs`               | Separator used in the recommendations file.                                             | `,`                                       |
-| `--sep_data`               | Separator used in the data files.                                                       | `\t`                                      |
-| `--ignore_first_line_recs` | Ignore the first line of the recommendations file.                                      | `False`                                   |
-| `--ignore_first_line_data` | Ignore the first line of the data files.                                                | `False`                                   |
-| `--seed`                   | Random seed for reproducibility.                                                        | `42`                                      |
+| Flag                       | Description                                                                                                                       | Default Value |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `--metric`                 | Evaluation metric: `precision`, `recall`, `ndcg`, `epc`, `gini`, `aggregate_diversity`.                                           | **Required**  |
+| `--recommendations_path`   | Path to the file with generated recommendations.                                                                                  | **Required**  |
+| `--data_path_train`        | Path to the training data file.                                                                                                   | **Required**  |
+| `--data_path_test`         | Path to the test data file or `none` to split randomly.                                                                           | `none`        |
+| `--test_size`              | Proportion of data to use for testing (if `data_path_test` is `none`).                                                            | `0.2`         |
+| `--sep_recs`               | Separator used in the recommendations file.                                                                                       | `,`           |
+| `--sep_data`               | Separator used in the data files.                                                                                                 | `\t`          |
+| `--ignore_first_line_recs` | Ignore the first line of the recommendations file.                                                                                | `False`       |
+| `--ignore_first_line_data` | Ignore the first line of the data files.                                                                                          | `False`       |
+| `--seed`                   | Random seed for reproducibility.                                                                                                  | `42`          |
+| `--split_strategy`         | Strategy for splitting the data into train and test sets: `random`, `leave_one_last`, `temporal_user`, `temporal_global`, `none`. | `none`        |
 
 
 ### Usage via Pipelines scripts
@@ -128,6 +129,7 @@ python -m src.pipelines.evaluate.plot_lot
 
 
 ## Project structure
+The project is organized into several directories and files, each serving a specific purpose. Below is an overview of the project structure:
 ```
 RecommenderSystems/
 ├───commands/               # Example commands for running the library
@@ -153,6 +155,7 @@ RecommenderSystems/
 │   ├───datamodule/             # Data loading and processing modules
 │   │       __init__.py
 │   │       data.py
+│   │       splits.py
 │   ├───evaluation/             # Evaluation modules for recommendation systems
 │   │       __init__.py
 │   │       evaluation.py
@@ -184,4 +187,6 @@ RecommenderSystems/
 └───requirements.txt        # Python package dependencies
 ```
 
+This structure allows for easy navigation and modularity, making it straightforward to extend the library with new recommendation algorithms or evaluation metrics. Each component is designed to be reusable and easily testable, facilitating the development of robust recommendation systems. In the next image, you can see the UML diagram of the project structure:
+![UML Diagram](RecommenderSystems.png)
 

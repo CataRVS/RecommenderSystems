@@ -7,11 +7,76 @@ import src.recommenders.matrix_factorisation as mf
 import src.recommenders.neural_networks as nn
 import src.utils.similarities as sim
 import src.utils.strategies as st
+import src.datamodule.splits as sp
 from src.datamodule.data import AbstractData, Data
 from src.utils.utils import Recommendation, set_seed
 from src.utils.similarities import Similarity
 from src.utils.strategies import Strategy
 from tqdm import tqdm
+
+
+def load_data(
+    data_path_train: str,
+    data_path_test: str | None = None,
+    sep: str = "\t",
+    test_size: float = 0.2,
+    ignore_first_line: bool = False,
+    split_strategy: str = "random",
+    seed: int = 42,
+) -> AbstractData:
+    """
+    Load the data from the specified paths and split it following one of the following strategies:
+    - random: Randomly split the data into training and test sets.
+    - leave_one_last: Leave the last interaction of each user as the test set.
+    - temporal_user: Split the data temporally for each user.
+    - temporal_global: Split the data temporally for the entire dataset.
+    - none: Do not split the data, return it as is.
+    - UPDATE 1: Add more split strategies if needed.
+
+    Parameters:
+        data_path_train (str): Path to the training data file.
+        data_path_test (str | None): Path to the test data file. If None, a test set
+                                      will be created from the training data.
+        sep (str): Separator used in the data files.
+        test_size (float): Proportion of the dataset to include in the test split.
+        ignore_first_line (bool): Whether to ignore the first line of the data files.
+        split_strategy (str): Strategy to split the data into train and test sets.
+        seed (int): Random seed for reproducibility.
+
+    Returns:
+        AbstractData: An instance of AbstractData containing the loaded data.
+    """
+    # Load the data using the Data class
+    data = Data(
+        data_path_train,
+        data_path_test,
+        sep,
+        test_size,
+        ignore_first_line,
+    )
+    if data_path_test == "none" and split_strategy == "none":
+        split_strategy = "random"
+
+    if split_strategy == "random":
+        splitter = sp.RandomSplitter(test_size=test_size, seed=seed)
+    elif split_strategy == "leave_one_last":
+        splitter = sp.LeaveOneLastSplitter()
+    elif split_strategy == "temporal_user":
+        splitter = sp.TemporalUserSplitter(test_size=test_size)
+    elif split_strategy == "temporal_global":
+        splitter = sp.TemporalGlobalSplitter(test_size=test_size)
+    elif split_strategy == "none":
+        # If no split strategy is specified, return the data as is
+        return data
+    else:
+        print(f"Split strategy {split_strategy} not found. "
+              "Check the available split strategies.")
+        exit(1)
+
+    # Split the data using the specified strategy
+    data = splitter.split(data)
+
+    return data
 
 
 def load_recommender(
@@ -39,7 +104,7 @@ def load_recommender(
     - bprmf: Bayesian Personalized Ranking Matrix Factorization recommender.
     - mlp: Neural network recommender using a simple MLP on user and item embeddings.
     - gnn: Graph Neural Network recommender.
-    - UPDATE 1: Add more recommenders if needed.
+    - UPDATE 2: Add more recommenders if needed.
 
     Parameters:
         recommender_name (str): Name of the recommender to load.
@@ -131,7 +196,7 @@ def load_strategy(strategy_name: str, data: AbstractData) -> Strategy:
     Load the specified recommendation strategy. Available strategies are:
     - exclude_seen: Exclude items already seen by the user.
     - no_filtering: Do not apply any filtering strategy.
-    - UPDATE 2: Add more strategies if needed.
+    - UPDATE 3: Add more strategies if needed.
 
     Parameters:
         strategy_name (str): Name of the recommendation strategy to load.
@@ -157,7 +222,7 @@ def load_similarity(similarity_name: str, data: AbstractData, mode: str) -> Simi
     Load the specified similarity measure. Available measures are:
     - cosine: Cosine similarity.
     - pearson: Pearson correlation coefficient.
-    - UPDATE 3: Add more similarity measures if needed.
+    - UPDATE 4: Add more similarity measures if needed.
 
     Parameters:
         similarity_name (str): Name of the similarity measure to load.
@@ -516,6 +581,15 @@ def main():
         default=2,
     )
 
+    # Add split strategy argument
+    parser.add_argument(
+        "--split_strategy",
+        type=str,
+        help="Strategy to split the data into train and test sets. "
+             "Available strategies: random, leave_one_last, temporal_user, temporal_global, none.",
+        required=False,
+        default="none",
+    )
     # Add the seed argument
     parser.add_argument(
         "--seed",
@@ -540,12 +614,14 @@ def main():
 
     # Load the data
     try:
-        data = Data(
-            args.data_path_train,
-            args.data_path_test,
-            args.sep,
-            args.test_size,
-            args.ignore_first_line,
+        data = load_data(
+            data_path_train=args.data_path_train,
+            data_path_test=args.data_path_test,
+            sep=args.sep,
+            test_size=args.test_size,
+            ignore_first_line=args.ignore_first_line,
+            split_strategy=args.split_strategy,
+            seed=args.seed,
         )
     except FileNotFoundError as e:
         print(e)

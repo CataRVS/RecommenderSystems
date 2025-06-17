@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from scipy.sparse import coo_matrix
-from typing import Tuple
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -190,6 +190,18 @@ class AbstractData(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_train_test_data(self) -> Tuple[List[Tuple[str, str, float, int]], List[Tuple[str, str, float, int]]]:
+        """
+        Convert the training and testing data to a list of tuples.
+        Each tuple contains (user_id, item_id, rating, timestamp).
+
+        Returns:
+            Tuple[List[Tuple[str, str, float, int]], List[Tuple[str, str, float, int]]]:
+                A tuple containing two lists: training data and testing data.
+        """
+        pass
+
     @staticmethod
     @abstractmethod
     def load_recs(
@@ -207,6 +219,27 @@ class AbstractData(ABC):
 
         Returns:
             dict: Dictionary with user IDs as keys and lists of recommended items as values.
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_train_test_data(
+        cls,
+        train: List[Tuple[str, str, float, int]],
+        test: List[Tuple[str, str, float, int]],
+    ) -> "AbstractData":
+        """
+        Create an instance of the data class from training and testing data.
+
+        Parameters:
+            train (List[Tuple[str, str, float, int]]): Training data as a list of tuples where
+                each tuple contains (user_id, item_id, rating, timestamp).
+            test (List[Tuple[str, str, float, int]]): Testing data as a list of tuples where
+                each tuple contains (user_id, item_id, rating, timestamp).
+
+        Returns:
+            AbstractData: An instance of the data class containing the training and testing data.
         """
         pass
 
@@ -343,6 +376,13 @@ class Data(AbstractData):
         data.columns = ["user", "item", "rating", "timestamp"]
 
         if train:
+            self._total_users: int = 0
+            self._total_items: int = 0
+            self._uid_map: dict = {}
+            self._iid_map: dict = {}
+            self._uidx_map: dict = {}
+            self._iidx_map: dict = {}
+
             # Update the total number of users and items
             self._total_users = data["user"].nunique()
             self._total_items = data["item"].nunique()
@@ -486,6 +526,21 @@ class Data(AbstractData):
         # Build and return a dict {item: rating}
         return dict(zip(user_df["item"], user_df["rating"]))
 
+    def get_train_test_data(self) -> Tuple[List[Tuple[str, str, float, int]], List[Tuple[str, str, float, int]]]:
+        train_data = self._train.values.tolist()
+        test_data = self._test.values.tolist()
+
+        # Map the internal user and item ids back to their original string representations
+        train_tuples = [
+            (str(self._uidx_map[row[0]]), self._iidx_map[row[1]], float(row[2]), int(row[3]))
+            for row in train_data
+        ]
+
+        test_tuples = [
+            (row[0], row[1], float(row[2]), int(row[3])) for row in test_data
+        ]
+        return train_tuples, test_tuples
+
     @staticmethod
     def load_recs(
         path: str,
@@ -505,3 +560,41 @@ class Data(AbstractData):
         for u, group in df.groupby("user"):
             recs[u] = group.sort_values("score", ascending=False)["item"].tolist()
         return recs
+
+    @classmethod
+    def from_train_test_data(
+        cls,
+        train: List[Tuple[str, str, float, int]],
+        test: List[Tuple[str, str, float, int]],
+    ) -> "Data":
+        # Convert dictionaries to DataFrames and reset index as a user column
+        train_df = pd.DataFrame(
+            train, columns=["user", "item", "rating", "timestamp"]
+        )
+
+        test_df = pd.DataFrame(
+            test, columns=["user", "item", "rating", "timestamp"]
+        )
+
+        # Create an instance of the class
+        instance = cls.__new__(cls)
+
+        # Initialize attributes
+        instance._total_users = 0
+        instance._total_items = 0
+        instance._uid_map = {}
+        instance._iid_map = {}
+        instance._uidx_map = {}
+        instance._iidx_map = {}
+
+        # Preprocess the data
+        try:
+            # Preprocess the training and testing data
+            instance._train = instance._preprocess(train_df, train=True)
+            instance._test = instance._preprocess(test_df, train=False)
+        except IndexError:
+            raise ValueError(
+                "Data is not in the expected format. Please check the data and try again."
+            )
+
+        return instance

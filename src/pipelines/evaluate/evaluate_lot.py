@@ -349,8 +349,8 @@ def run_evaluation(
 if __name__ == "__main__":
     ########## CONFIGURATION ##########
     # Options "popularity", "random", "knn_user", "knn_item", "mf", "bprmf", "mlp" or "gnn"
-    model = "mlp"
-    recs_dir = "results/recommendations/NewYork_10"
+    model = "knn_item"
+    recs_dir = "results/recommendations/ml-100k_2"
     train_path = "data/dataset/train.txt"  # Path to the training data file
     test_path = "data/dataset/test.txt"  # "none" or provide a path to a test file
 
@@ -361,7 +361,7 @@ if __name__ == "__main__":
     # test_path = "none"  # "none" or provide a path to a test file
     test_size = 0.1
     sep = "\t"
-    output_dir = "results/metrics/"
+    output_dir = "results/metrics_2/"
 
     run_evaluation(
         model=model,

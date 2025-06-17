@@ -87,7 +87,7 @@ def plot_precision_comparison(df: pd.DataFrame, graphs_path: str):
     """
     fig, axes = plt.subplots(1, 3, figsize=(16, 6))
 
-    # --- KNN Subplot ---
+    # KNN Subplot
     df_knn = df[df['recommender'].str.contains('knn')]
     if not df_knn.empty:
         df_knn = df_knn.sort_values(by='precision', ascending=False)
@@ -100,12 +100,12 @@ def plot_precision_comparison(df: pd.DataFrame, graphs_path: str):
         axes[0].set_title('KNN: Precision by k and Similarity')
         axes[0].set_xlabel('k')
         axes[0].set_ylabel('Precision')
-        axes[0].legend(title='Recommender - Similarity', loc='center right', bbox_to_anchor=(1.0, 0.6))
+        axes[0].legend(title='Recommender - Similarity')
         axes[0].grid(axis='y', linestyle='--', alpha=0.5)
     else:
         axes[0].set_title('KNN: No Data Available')
 
-    # --- MF Subplot ---
+    # MF Subplot
     df_mf = df[df['recommender'] == 'mf']
     if not df_mf.empty and 'n_factors' in df_mf.columns:
         df_mf = df_mf.sort_values(by='precision', ascending=False)
@@ -117,7 +117,7 @@ def plot_precision_comparison(df: pd.DataFrame, graphs_path: str):
     else:
         axes[1].set_title('MF: No Data Available or Missing n_factors')
 
-    # --- BPRMF Subplot ---
+    # BPRMF Subplot
     df_bprmf = df[df['recommender'] == 'bprmf']
     if not df_bprmf.empty and 'n_factors' in df_bprmf.columns:
         df_bprmf = df_bprmf.sort_values(by='precision', ascending=False)
@@ -232,6 +232,6 @@ if __name__ == "__main__":
     ########## CONFIGURATION ##########
     metrics_path = "results/metrics/NewYork"
     graphs_path = "results/graphs/NewYork"
-    metrics_path = "results/metrics/ml-100k"
-    graphs_path = "results/graphs/ml-100k"
+    # metrics_path = "results/metrics/ml-100k"
+    # graphs_path = "results/graphs/ml-100k"
     main(metrics_path, graphs_path)
